@@ -3,7 +3,7 @@ git sw master
 for student in "${students[@]}"; do
     echo "Updating branch ${student} ..."
     git sw "${student}"
-    git rebase master
+    git merge master
     git push
     git sw master
 done
