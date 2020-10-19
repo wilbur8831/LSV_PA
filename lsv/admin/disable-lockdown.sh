@@ -4,7 +4,7 @@ if [ -f ".github/workflows/lockdown.yml" ]; then
     git a .github/workflows
     git cm "Disable lockdown"
     git push
-    lsv/admin/update-branches-master.sh
+    lsv/admin/update-branches.sh
 else
     echo "[WARNING] Lockdown is NOT enabled!"
 fi
