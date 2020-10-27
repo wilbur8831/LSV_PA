@@ -14,8 +14,7 @@ ref_dir="${pa_dir}/ref"
 out_dir="${pa_dir}/out"
 diff_dir="${pa_dir}/diff"
 bench_list=( $(find -L benchmarks/best_results/ -type f -name '*.blif') )
-#students=( $(cut -d, -f1 < lsv/admin/participants-id.csv | tail -n +3) )
-students=(d04943019 b05901015-back)
+students=( $(cut -d, -f1 < lsv/admin/participants-id.csv | tail -n +3) )
 
 grade_one_branch () {
     student="$1"
@@ -59,7 +58,7 @@ if [ "$1" = "ALL" ]; then
         git add "${pa_dir}/${student}.csv"
         #git add "${ref_dir}" "${out_dir}" "${diff_dir}"
         git commit -m "Grade branch ${student}"
-        #git push
+        git push
     done
     git switch master
     all_result="${pa_dir}/ALL.csv"
@@ -69,7 +68,7 @@ if [ "$1" = "ALL" ]; then
     done
     git add "${all_result}"
     git commit -m "Grade the PAs of students"
-    #git push
+    git push
 else
     echo "[INFO] Grading branch $1 ..."
     grade_one_branch "$1" point
