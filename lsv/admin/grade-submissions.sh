@@ -54,7 +54,7 @@ if [ "$1" = "ALL" ]; then
     echo "[INFO] Grading all students ..."
     student_points=()
     for student in "${students[@]}"; do
-        grade_one_branch "$1" point
+        grade_one_branch "${student}" point
         student_points+=("${point}")
     done
     git sw master
