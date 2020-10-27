@@ -61,8 +61,11 @@ if [ "$1" = "ALL" ]; then
         git commit -m "Grade branch ${student}"
         #git push
     done
-    git sw master
+    git switch master
     echo "${student_points[@]}"
+    for i in "${!students[@]}"; do
+        echo "${students[$i]},${student_points[$i]}"
+    done
 else
     echo "[INFO] Grading branch $1 ..."
     grade_one_branch "$1" point
