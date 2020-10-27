@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <ALL|branch-name>"
     echo "ALL: grade ALL students"
@@ -14,11 +15,7 @@ out_dir="${pa_dir}/out"
 diff_dir="${pa_dir}/diff"
 bench_list=( $(find -L benchmarks/best_results/ -type f -name '*.blif') )
 
-if [ "$1" = "ALL" ]; then
-    echo "[INFO] Grading all students ..."
-    echo "[ERROR] This part is not yet finished!"
-    exit 1
-else
+grade_one_branch () {
     student="$1"
     result="${pa_dir}/${student}.csv"
     echo "[INFO] Grading student id ${student} ..."
@@ -44,8 +41,19 @@ else
             echo "${bench},Fail" >> "${result}"
         fi
     done
-    point=$(echo "${correct}*2" | bc)
+    local __return_var="$2"
+    local __point=$(echo "${correct}*2" | bc)
+    eval "${__return_var}"="${__point}"
     echo "[INFO] Correct cases: ${correct}"
-    echo "[INFO] Total points: ${point}"
-    echo "Score,${point}" >> "${result}"
+    echo "[INFO] Total points: ${__point}"
+    echo "Score,${__point}" >> "${result}"
+}
+
+if [ "$1" = "ALL" ]; then
+    echo "[INFO] Grading all students ..."
+    echo "[ERROR] This part is not yet finished!"
+    exit 1
+else
+    grade_one_branch "$1" point
+    echo "This student gets: ${point}"
 fi
