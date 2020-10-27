@@ -56,6 +56,10 @@ if [ "$1" = "ALL" ]; then
     for student in "${students[@]}"; do
         grade_one_branch "${student}" point
         student_points+=("${point}")
+        git add "${pa_dir}/${student}.csv"
+        git add "${ref_dir}" "${out_dir}" "${diff_dir}"
+        git commit -m "Grade branch ${student}"
+        #git push
     done
     git sw master
     echo "${student_points[@]}"
