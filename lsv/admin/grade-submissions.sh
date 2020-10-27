@@ -62,9 +62,10 @@ if [ "$1" = "ALL" ]; then
         #git push
     done
     git switch master
-    echo "${student_points[@]}"
+    all_result="${pa_dir}/ALL.csv"
+    echo "Student,Points" > "${all_result}"
     for i in "${!students[@]}"; do
-        echo "${students[$i]},${student_points[$i]}"
+        echo "${students[$i]},${student_points[$i]}" >> "${all_result}"
     done
 else
     echo "[INFO] Grading branch $1 ..."
