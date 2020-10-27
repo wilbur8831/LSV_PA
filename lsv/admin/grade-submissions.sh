@@ -14,11 +14,12 @@ ref_dir="${pa_dir}/ref"
 out_dir="${pa_dir}/out"
 diff_dir="${pa_dir}/diff"
 bench_list=( $(find -L benchmarks/best_results/ -type f -name '*.blif') )
+students=(master d04943019 b05901015-back)
+#students=( $(cut -d, -f1 < lsv/admin/participants-id.csv | tail -n +3) )
 
 grade_one_branch () {
     student="$1"
     result="${pa_dir}/${student}.csv"
-    echo "[INFO] Grading student id ${student} ..."
     git switch "${student}"
     make -j8
     echo "Benchmark,Result" > "${result}"
@@ -51,9 +52,14 @@ grade_one_branch () {
 
 if [ "$1" = "ALL" ]; then
     echo "[INFO] Grading all students ..."
-    echo "[ERROR] This part is not yet finished!"
-    exit 1
+    student_points=()
+    for student in "${students[@]}"; do
+        grade_one_branch "$1" point
+        student_points+=("${point}")
+    done
+    git sw master
+    echo "${student_points[@]}"
 else
+    echo "[INFO] Grading branch $1 ..."
     grade_one_branch "$1" point
-    echo "This student gets: ${point}"
 fi
