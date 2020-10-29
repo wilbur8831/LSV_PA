@@ -60,6 +60,7 @@ if [ "$1" = "ALL" ]; then
         git add -f "${ref_dir}" "${out_dir}" "${diff_dir}"
         git commit -m "Grade branch ${student}"
         git push
+        git stash push -m "Garbage from ${student}"
     done
     git switch master
     all_result="${pa_dir}/ALL.csv"
