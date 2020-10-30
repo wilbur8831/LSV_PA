@@ -3,14 +3,17 @@
 #include "base/main/mainInt.h"
 
 extern void Lsv_NtkPrintSopUnate(Abc_Ntk_t*);
+extern void Lsv_NtkPrintPoUnate(Abc_Ntk_t*);
 
 static int Lsv_CommandPrintNodes(Abc_Frame_t* pAbc, int argc, char** argv);
 static int Lsv_CommandPrintSopUnate(Abc_Frame_t* pAbc, int argc, char** argv);
+static int Lsv_CommandPrintPoUnate(Abc_Frame_t* pAbc, int argc, char** argv);
 
 void init(Abc_Frame_t* pAbc) {
   Cmd_CommandAdd(pAbc, "LSV", "lsv_print_nodes", Lsv_CommandPrintNodes, 0);
   Cmd_CommandAdd(pAbc, "LSV", "lsv_print_sopunate", Lsv_CommandPrintSopUnate,
                  0);
+  Cmd_CommandAdd(pAbc, "LSV", "lsv_print_pounate", Lsv_CommandPrintPoUnate, 0);
 }
 
 void destroy(Abc_Frame_t* pAbc) {}
@@ -103,6 +106,37 @@ usage:
   Abc_Print(-2,
             "\t        prints the unate information of the SOP nodes in the "
             "network\n");
+  Abc_Print(-2, "\t-h    : print the command usage\n");
+  return 1;
+}
+
+int Lsv_CommandPrintPoUnate(Abc_Frame_t* pAbc, int argc, char** argv) {
+  Abc_Ntk_t* pNtk = Abc_FrameReadNtk(pAbc);
+
+  int c;
+  Extra_UtilGetoptReset();
+  while ((c = Extra_UtilGetopt(argc, argv, "h")) != EOF) {
+    switch (c) {
+      case 'h':
+        goto usage;
+      default:
+        goto usage;
+    }
+  }
+  if (!pNtk) {
+    Abc_Print(-1, "Empty network.\n");
+    return 1;
+  }
+  if (!Abc_NtkIsStrash(pNtk)) {
+    Abc_Print(-1, "The network is not strashed.\n");
+    return 1;
+  }
+  Lsv_NtkPrintPoUnate(pNtk);
+  return 0;
+
+usage:
+  Abc_Print(-2, "usage: lsv_print_pounate [-h]\n");
+  Abc_Print(-2, "\t      : prints the unate information of the POs\n");
   Abc_Print(-2, "\t-h    : print the command usage\n");
   return 1;
 }
