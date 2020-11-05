@@ -7,7 +7,12 @@ extern "C" {
 Aig_Man_t* Abc_NtkToDar(Abc_Ntk_t*, int, int);
 }
 
-static void printNodeUnateInfo(Abc_Obj_t*, Vec_Ptr_t*, Vec_Ptr_t*, Vec_Ptr_t*);
+static void printPoUnateInfo(Abc_Ntk_t*, Abc_Obj_t*, int, Vec_Ptr_t*,
+                             Vec_Ptr_t*, Vec_Ptr_t*, int);
+static void printNodeUnateInfoLsvFormat(Abc_Obj_t*, Vec_Ptr_t*, Vec_Ptr_t*,
+                                        Vec_Ptr_t*);
+static void printNodeUnateInfoAbcFormat(Abc_Ntk_t*, int, Vec_Ptr_t*, Vec_Ptr_t*,
+                                        Vec_Ptr_t*);
 static void printObjNameInVec(Vec_Ptr_t*);
 static int Vec_PtrSortCompareObjId(void** pp1, void** pp2) {
   Abc_Obj_t* pObj1 = (Abc_Obj_t*)*pp1;
@@ -69,9 +74,9 @@ void Lsv_NtkPrintSopUnate(Abc_Ntk_t* pNtk) {
     Vec_PtrSort(vNegUnate, (int (*)())Vec_PtrSortCompareObjId);
     Vec_PtrSort(vBinate, (int (*)())Vec_PtrSortCompareObjId);
     if (Abc_SopGetPhase(pSop)) {
-      printNodeUnateInfo(pNode, vPosUnate, vNegUnate, vBinate);
+      printNodeUnateInfoLsvFormat(pNode, vPosUnate, vNegUnate, vBinate);
     } else {
-      printNodeUnateInfo(pNode, vNegUnate, vPosUnate, vBinate);
+      printNodeUnateInfoLsvFormat(pNode, vNegUnate, vPosUnate, vBinate);
     }
   }
   Vec_PtrFree(vPosUnate);
@@ -79,8 +84,20 @@ void Lsv_NtkPrintSopUnate(Abc_Ntk_t* pNtk) {
   Vec_PtrFree(vBinate);
 }
 
-void printNodeUnateInfo(Abc_Obj_t* pNode, Vec_Ptr_t* pVecPosUnate,
-                        Vec_Ptr_t* pVecNegUnate, Vec_Ptr_t* pVecBinate) {
+void printPoUnateInfo(Abc_Ntk_t* pNtk, Abc_Obj_t* pPo, int indexPo,
+                      Vec_Ptr_t* pVecPosUnate, Vec_Ptr_t* pVecNegUnate,
+                      Vec_Ptr_t* pVecBinate, int fLsvOutputFormat) {
+  if (fLsvOutputFormat) {
+    printNodeUnateInfoLsvFormat(pPo, pVecPosUnate, pVecNegUnate, pVecBinate);
+  } else {
+    printNodeUnateInfoAbcFormat(pNtk, indexPo, pVecPosUnate, pVecNegUnate,
+                                pVecBinate);
+  }
+}
+
+void printNodeUnateInfoLsvFormat(Abc_Obj_t* pNode, Vec_Ptr_t* pVecPosUnate,
+                                 Vec_Ptr_t* pVecNegUnate,
+                                 Vec_Ptr_t* pVecBinate) {
   if (Vec_PtrSize(pVecPosUnate) || Vec_PtrSize(pVecNegUnate) ||
       Vec_PtrSize(pVecBinate)) {
     printf("node %s:\n", Abc_ObjName(pNode));
@@ -99,6 +116,33 @@ void printNodeUnateInfo(Abc_Obj_t* pNode, Vec_Ptr_t* pVecPosUnate,
   }
 }
 
+void printNodeUnateInfoAbcFormat(Abc_Ntk_t* pNtk, int indexPo,
+                                 Vec_Ptr_t* pVecPosUnate,
+                                 Vec_Ptr_t* pVecNegUnate,
+                                 Vec_Ptr_t* pVecBinate) {
+  if (Vec_PtrSize(pVecPosUnate) || Vec_PtrSize(pVecNegUnate) ||
+      Vec_PtrSize(pVecBinate)) {
+    printf("Out%4d : ", indexPo);
+    Abc_Obj_t* pPi;
+    int j;
+    Abc_NtkForEachPi(pNtk, pPi, j) {
+      bool isPosUnate = false;
+      bool isNegUnate = false;
+      if (Vec_PtrFind(pVecPosUnate, pPi) != -1) {
+        isPosUnate = true;
+      }
+      if (Vec_PtrFind(pVecNegUnate, pPi) != -1) {
+        isNegUnate = true;
+      }
+      if (isPosUnate && !isNegUnate) printf("p");
+      if (!isPosUnate && isNegUnate) printf("n");
+      if (!isPosUnate && !isNegUnate) printf(".");
+      if (isPosUnate && isNegUnate) printf(" ");
+    }
+    printf("\n");
+  }
+}
+
 void printObjNameInVec(Vec_Ptr_t* pVec) {
   Abc_Obj_t* pFanin;
   int j;
@@ -111,15 +155,32 @@ void printObjNameInVec(Vec_Ptr_t* pVec) {
   printf("\n");
 }
 
-void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk) {
+void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk, int fLsvOutputFormat) {
+  Vec_Ptr_t* vPosUnate = Vec_PtrAlloc(Abc_NtkPiNum(pNtk));
+  Vec_Ptr_t* vNegUnate = Vec_PtrAlloc(Abc_NtkPiNum(pNtk));
+  Vec_Ptr_t* vBinate = Vec_PtrAlloc(Abc_NtkPiNum(pNtk));
   Abc_Obj_t* pPo;
   int i;
   Abc_NtkForEachPo(pNtk, pPo, i) {
-    // printf("po %s:\n", Abc_ObjName(pPo));
+    Vec_PtrClear(vPosUnate);
+    Vec_PtrClear(vNegUnate);
+    Vec_PtrClear(vBinate);
     Abc_Ntk_t* pNtkCone =
         Abc_NtkCreateCone(pNtk, Abc_ObjFanin0(pPo), Abc_ObjName(pPo), 0);
     if (Abc_ObjFaninC0(pPo)) {
       Abc_ObjSetFaninC(Abc_NtkPo(pNtkCone, 0), 0);
+    }
+    Abc_Obj_t* pPi;
+    int j;
+    Abc_NtkForEachPi(pNtk, pPi, j) {
+      if (!Abc_NtkFindCi(pNtkCone, Abc_ObjName(pPi))) {
+        Vec_PtrPush(vPosUnate, pPi);
+        Vec_PtrPush(vNegUnate, pPi);
+      }
+    }
+    Vec_Ptr_t* vPiMapping = Vec_PtrStart(Abc_NtkPiNum(pNtkCone));
+    Abc_NtkForEachPi(pNtkCone, pPi, j) {
+      Vec_PtrWriteEntry(vPiMapping, j, Abc_NtkFindCi(pNtk, Abc_ObjName(pPi)));
     }
     Aig_Man_t* pMan = Abc_NtkToDar(pNtkCone, 0, 0);
     Cnf_Dat_t* pCnfPositiveCofactor = Cnf_Derive(pMan, Aig_ManCoNum(pMan));
@@ -132,7 +193,6 @@ void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk) {
     writeCnfIntoSolver(pCnfNegativeCofactor, pSatSolver);
     Vec_Int_t* vEnableVars = Vec_IntAlloc(Aig_ManCiNum(pMan));
     Aig_Obj_t* pCi;
-    int j;
     Aig_ManForEachCi(pMan, pCi, j) {
       Vec_IntPush(vEnableVars, sat_solver_addvar(pSatSolver));
       sat_solver_add_buffer_enable(
@@ -145,30 +205,34 @@ void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk) {
       bool isNegUnate = false;
       if (isPositiveUnate(pSatSolver, pCnfPositiveCofactor,
                           pCnfNegativeCofactor, vEnableVars, pMan, j)) {
+        Vec_PtrPush(vPosUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
         isPosUnate = true;
-        // printf("[INFO] PO %d is positive unate in PI %d\n", i, j);
       }
       if (isNegativeUnate(pSatSolver, pCnfPositiveCofactor,
                           pCnfNegativeCofactor, vEnableVars, pMan, j)) {
+        Vec_PtrPush(vNegUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
         isNegUnate = true;
-        // printf("[INFO] PO %d is negative unate in PI %d\n", i, j);
       }
-      if (isPosUnate && !isNegUnate) printf("p");
-      if (!isPosUnate && isNegUnate) printf("n");
-      if (!isPosUnate && !isNegUnate) printf(".");
-      if (isPosUnate && isNegUnate) printf(" ");
-      /*if (!isPosUnate && !isNegUnate) {
-        printf("[INFO] PO %d is binate in PI %d\n", i, j);
-      }*/
+      if (!isPosUnate && !isNegUnate) {
+        Vec_PtrPush(vBinate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+      }
     }
-    printf("\n");
+    Vec_PtrSort(vPosUnate, (int (*)())Vec_PtrSortCompareObjId);
+    Vec_PtrSort(vNegUnate, (int (*)())Vec_PtrSortCompareObjId);
+    Vec_PtrSort(vBinate, (int (*)())Vec_PtrSortCompareObjId);
+    printPoUnateInfo(pNtk, pPo, i, vPosUnate, vNegUnate, vBinate,
+                     fLsvOutputFormat);
     Aig_ManStop(pMan);
     Cnf_DataFree(pCnfPositiveCofactor);
     Cnf_DataFree(pCnfNegativeCofactor);
     sat_solver_delete(pSatSolver);
     Vec_IntFree(vEnableVars);
     Abc_NtkDelete(pNtkCone);
+    Vec_PtrFree(vPiMapping);
   }
+  Vec_PtrFree(vPosUnate);
+  Vec_PtrFree(vNegUnate);
+  Vec_PtrFree(vBinate);
 }
 
 void writeCnfIntoSolver(Cnf_Dat_t* pCnf, sat_solver* pSat) {
