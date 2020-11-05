@@ -8,7 +8,7 @@ pa_dir="lsv/pa2"
 ref_dir="${pa_dir}/ref"
 out_dir="${pa_dir}/out"
 diff_dir="${pa_dir}/diff"
-bench_list=( $(find -L benchmarks/ -maxdepth 2 -type f -name '*.blif') )
+bench_list=( $(find -L benchmarks/ -maxdepth 2 -type f -name '*.aig') )
 
 grade_one_branch () {
     student="$1"
