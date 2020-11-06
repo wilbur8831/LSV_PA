@@ -3,7 +3,7 @@
 #include "base/main/mainInt.h"
 
 extern void Lsv_NtkPrintSopUnate(Abc_Ntk_t*);
-extern void Lsv_NtkPrintPoUnate(Abc_Ntk_t*, int);
+extern void Lsv_NtkPrintPoUnate(Abc_Ntk_t*, int, int);
 extern void Lsv_Test(Abc_Ntk_t*);
 
 static int Lsv_CommandPrintNodes(Abc_Frame_t* pAbc, int argc, char** argv);
@@ -116,12 +116,16 @@ usage:
 int Lsv_CommandPrintPoUnate(Abc_Frame_t* pAbc, int argc, char** argv) {
   Abc_Ntk_t* pNtk = Abc_FrameReadNtk(pAbc);
   int fLsvOutputFormat = 1;
+  int fAigCofactor = 0;
   int c;
   Extra_UtilGetoptReset();
-  while ((c = Extra_UtilGetopt(argc, argv, "lh")) != EOF) {
+  while ((c = Extra_UtilGetopt(argc, argv, "lah")) != EOF) {
     switch (c) {
       case 'l':
         fLsvOutputFormat ^= 1;
+        break;
+      case 'a':
+        fAigCofactor ^= 1;
         break;
       case 'h':
         goto usage;
@@ -137,15 +141,17 @@ int Lsv_CommandPrintPoUnate(Abc_Frame_t* pAbc, int argc, char** argv) {
     Abc_Print(-1, "The network is not strashed.\n");
     return 1;
   }
-  Lsv_NtkPrintPoUnate(pNtk, fLsvOutputFormat);
+  Lsv_NtkPrintPoUnate(pNtk, fLsvOutputFormat, fAigCofactor);
   return 0;
 
 usage:
-  Abc_Print(-2, "usage: lsv_print_pounate [-lh]\n");
+  Abc_Print(-2, "usage: lsv_print_pounate [-lah]\n");
   Abc_Print(-2, "\t      : prints the unate information of the POs\n");
   Abc_Print(-2,
             "\t-l    : prints in the output format of LSV PA2 [default = %s]\n",
             fLsvOutputFormat ? "yes" : "no");
+  Abc_Print(-2, "\t-a    : toggles using AIG-based cofactor [default = %s]\n",
+            fAigCofactor ? "yes" : "no");
   Abc_Print(-2, "\t-h    : print the command usage\n");
   return 1;
 }

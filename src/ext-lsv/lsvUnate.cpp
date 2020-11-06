@@ -17,7 +17,6 @@ static Abc_Ntk_t* createPoTransitiveFaninCone(Abc_Ntk_t* pNtk, Abc_Obj_t* pPo) {
   }
   return pNtkCone;
 }
-
 static void collectNonSupportPis(Abc_Ntk_t* pNtk, Abc_Ntk_t* pNtkCone,
                                  Vec_Ptr_t* vPosUnate, Vec_Ptr_t* vNegUnate) {
   Abc_Obj_t* pPi;
@@ -29,7 +28,6 @@ static void collectNonSupportPis(Abc_Ntk_t* pNtk, Abc_Ntk_t* pNtkCone,
     }
   }
 }
-
 static Vec_Ptr_t* collectPiMapping(Abc_Ntk_t* pNtk, Abc_Ntk_t* pNtkCone) {
   Vec_Ptr_t* vPiMapping = Vec_PtrStart(Abc_NtkPiNum(pNtkCone));
   Abc_Obj_t* pPi;
@@ -42,6 +40,8 @@ static Vec_Ptr_t* collectPiMapping(Abc_Ntk_t* pNtk, Abc_Ntk_t* pNtkCone) {
 
 static void analyzePoUnateIncrementalSat(Abc_Ntk_t*, Vec_Ptr_t*, Vec_Ptr_t*,
                                          Vec_Ptr_t*, Vec_Ptr_t*);
+static void analyzePoUnateAigCofactor(Abc_Ntk_t*, Vec_Ptr_t*, Vec_Ptr_t*,
+                                      Vec_Ptr_t*, Vec_Ptr_t*);
 
 static void printPoUnateInfo(Abc_Ntk_t*, Abc_Obj_t*, int, Vec_Ptr_t*,
                              Vec_Ptr_t*, Vec_Ptr_t*, int);
@@ -72,6 +72,9 @@ static bool isNegativeUnate(sat_solver* pSat, Cnf_Dat_t* pCnfPos,
   return isUnate(pSat, pCnfPos, pCnfNeg, pVecEnVars, pMan, pIndexCi, false);
 }
 
+static bool isNtkPoUnsat(Abc_Ntk_t* pNtk) {
+  return (Abc_NtkDSat(pNtk, 0, 0, 0, 0, 0, 0, 0, 0, 0) == 1);
+}
 static void Lsv_NtkBuildTestUnate(Abc_Ntk_t*, int, int);
 
 void Lsv_NtkPrintSopUnate(Abc_Ntk_t* pNtk) {
@@ -193,7 +196,8 @@ void printObjNameInVec(Vec_Ptr_t* pVec) {
   printf("\n");
 }
 
-void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk, int fLsvOutputFormat) {
+void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk, int fLsvOutputFormat,
+                         int fAigCofactor) {
   Vec_Ptr_t* vPosUnate = Vec_PtrAlloc(Abc_NtkPiNum(pNtk));
   Vec_Ptr_t* vNegUnate = Vec_PtrAlloc(Abc_NtkPiNum(pNtk));
   Vec_Ptr_t* vBinate = Vec_PtrAlloc(Abc_NtkPiNum(pNtk));
@@ -206,8 +210,14 @@ void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk, int fLsvOutputFormat) {
     Abc_Ntk_t* pNtkCone = createPoTransitiveFaninCone(pNtk, pPo);
     collectNonSupportPis(pNtk, pNtkCone, vPosUnate, vNegUnate);
     Vec_Ptr_t* vPiMapping = collectPiMapping(pNtk, pNtkCone);
-    analyzePoUnateIncrementalSat(pNtkCone, vPiMapping, vPosUnate, vNegUnate,
-                                 vBinate);
+    if (fAigCofactor) {
+      analyzePoUnateAigCofactor(pNtkCone, vPiMapping, vPosUnate, vNegUnate,
+                                vBinate);
+    } else {
+      analyzePoUnateIncrementalSat(pNtkCone, vPiMapping, vPosUnate, vNegUnate,
+                                   vBinate);
+    }
+
     Vec_PtrSort(vPosUnate, (int (*)())Vec_PtrSortCompareObjId);
     Vec_PtrSort(vNegUnate, (int (*)())Vec_PtrSortCompareObjId);
     Vec_PtrSort(vBinate, (int (*)())Vec_PtrSortCompareObjId);
@@ -297,36 +307,31 @@ bool isUnate(sat_solver* pSat, Cnf_Dat_t* pCnfPos, Cnf_Dat_t* pCnfNeg,
   return false;
 }
 
-void Lsv_Test(Abc_Ntk_t* pNtk) {
-  Abc_Obj_t* pPo;
-  int i;
-  Abc_NtkForEachPo(pNtk, pPo, i) {
-    printf("Out%4d : ", i);
-    Abc_Ntk_t* pNtkCone =
-        Abc_NtkCreateCone(pNtk, Abc_ObjFanin0(pPo), Abc_ObjName(pPo), 0);
-    if (Abc_ObjFaninC0(pPo)) {
-      Abc_ObjSetFaninC(Abc_NtkPo(pNtkCone, 0), 0);
+void analyzePoUnateAigCofactor(Abc_Ntk_t* pNtkCone, Vec_Ptr_t* vPiMapping,
+                               Vec_Ptr_t* vPosUnate, Vec_Ptr_t* vNegUnate,
+                               Vec_Ptr_t* vBinate) {
+  Abc_Obj_t* pPi;
+  int j;
+  Abc_NtkForEachPi(pNtkCone, pPi, j) {
+    Abc_Ntk_t* pNtkTestPosUnate = Abc_NtkDup(pNtkCone);
+    Lsv_NtkBuildTestUnate(pNtkTestPosUnate, 1, j);
+    Abc_Ntk_t* pNtkTestNegUnate = Abc_NtkDup(pNtkCone);
+    Lsv_NtkBuildTestUnate(pNtkTestNegUnate, 0, j);
+    bool isPosUnate = false;
+    bool isNegUnate = false;
+    if (isNtkPoUnsat(pNtkTestPosUnate)) {
+      Vec_PtrPush(vPosUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+      isPosUnate = true;
     }
-    Abc_Obj_t* pPi;
-    int j;
-    Abc_NtkForEachPi(pNtkCone, pPi, j) {
-      Abc_Ntk_t* pNtkTestPosUnate = Abc_NtkDup(pNtkCone);
-      Lsv_NtkBuildTestUnate(pNtkTestPosUnate, 1, j);
-      Abc_Ntk_t* pNtkTestNegUnate = Abc_NtkDup(pNtkCone);
-      Lsv_NtkBuildTestUnate(pNtkTestNegUnate, 0, j);
-      bool isPosUnate =
-          (Abc_NtkDSat(pNtkTestPosUnate, 0, 0, 0, 0, 0, 0, 0, 0, 0) == 1);
-      bool isNegUnate =
-          (Abc_NtkDSat(pNtkTestNegUnate, 0, 0, 0, 0, 0, 0, 0, 0, 0) == 1);
-      if (isPosUnate && !isNegUnate) printf("p");
-      if (!isPosUnate && isNegUnate) printf("n");
-      if (!isPosUnate && !isNegUnate) printf(".");
-      if (isPosUnate && isNegUnate) printf(" ");
-      Abc_NtkDelete(pNtkTestPosUnate);
-      Abc_NtkDelete(pNtkTestNegUnate);
+    if (isNtkPoUnsat(pNtkTestNegUnate)) {
+      Vec_PtrPush(vNegUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+      isNegUnate = true;
     }
-    printf("\n");
-    Abc_NtkDelete(pNtkCone);
+    if (!isPosUnate && !isNegUnate) {
+      Vec_PtrPush(vBinate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+    }
+    Abc_NtkDelete(pNtkTestPosUnate);
+    Abc_NtkDelete(pNtkTestNegUnate);
   }
 }
 
@@ -387,4 +392,8 @@ void Lsv_NtkBuildTestUnate(Abc_Ntk_t* pNtk, int fPos, int iVar) {
     // update the fanins of the CO
     Abc_ObjPatchFanin(pObj, pFanin, pNext);
   }
+}
+
+void Lsv_Test(Abc_Ntk_t* pNtk) {
+  printf("Testing playground for LSV PAs: try out anything you like!\n");
 }
