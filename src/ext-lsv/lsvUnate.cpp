@@ -5,6 +5,8 @@
 
 extern "C" {
 Aig_Man_t* Abc_NtkToDar(Abc_Ntk_t*, int, int);
+extern int Abc_NtkDSat(Abc_Ntk_t* pNtk, ABC_INT64_T, ABC_INT64_T, int, int, int,
+                       int, int, int, int);
 }
 
 static void printPoUnateInfo(Abc_Ntk_t*, Abc_Obj_t*, int, Vec_Ptr_t*,
@@ -35,6 +37,8 @@ static bool isNegativeUnate(sat_solver* pSat, Cnf_Dat_t* pCnfPos,
                             Aig_Man_t* pMan, int pIndexCi) {
   return isUnate(pSat, pCnfPos, pCnfNeg, pVecEnVars, pMan, pIndexCi, false);
 }
+
+static void Lsv_NtkBuildTestUnate(Abc_Ntk_t*, int, int);
 
 void Lsv_NtkPrintSopUnate(Abc_Ntk_t* pNtk) {
   Vec_Ptr_t* vPosUnate = Vec_PtrAlloc(8);
@@ -263,4 +267,96 @@ bool isUnate(sat_solver* pSat, Cnf_Dat_t* pCnfPos, Cnf_Dat_t* pCnfNeg,
     return true;
   }
   return false;
+}
+
+void Lsv_Test(Abc_Ntk_t* pNtk) {
+  Abc_Obj_t* pPo;
+  int i;
+  Abc_NtkForEachPo(pNtk, pPo, i) {
+    printf("Out%4d : ", i);
+    Abc_Ntk_t* pNtkCone =
+        Abc_NtkCreateCone(pNtk, Abc_ObjFanin0(pPo), Abc_ObjName(pPo), 0);
+    if (Abc_ObjFaninC0(pPo)) {
+      Abc_ObjSetFaninC(Abc_NtkPo(pNtkCone, 0), 0);
+    }
+    Abc_Obj_t* pPi;
+    int j;
+    Abc_NtkForEachPi(pNtkCone, pPi, j) {
+      Abc_Ntk_t* pNtkTestPosUnate = Abc_NtkDup(pNtkCone);
+      Lsv_NtkBuildTestUnate(pNtkTestPosUnate, 1, j);
+      Abc_Ntk_t* pNtkTestNegUnate = Abc_NtkDup(pNtkCone);
+      Lsv_NtkBuildTestUnate(pNtkTestNegUnate, 0, j);
+      bool isPosUnate =
+          (Abc_NtkDSat(pNtkTestPosUnate, 0, 0, 0, 0, 0, 0, 0, 0, 0) == 1);
+      bool isNegUnate =
+          (Abc_NtkDSat(pNtkTestNegUnate, 0, 0, 0, 0, 0, 0, 0, 0, 0) == 1);
+      if (isPosUnate && !isNegUnate) printf("p");
+      if (!isPosUnate && isNegUnate) printf("n");
+      if (!isPosUnate && !isNegUnate) printf(".");
+      if (isPosUnate && isNegUnate) printf(" ");
+      Abc_NtkDelete(pNtkTestPosUnate);
+      Abc_NtkDelete(pNtkTestNegUnate);
+    }
+    printf("\n");
+    Abc_NtkDelete(pNtkCone);
+  }
+}
+
+void Lsv_NtkBuildTestUnate(Abc_Ntk_t* pNtk, int fPos, int iVar) {
+  Vec_Ptr_t* vNodes;
+  Abc_Obj_t *pObj, *pNext, *pFanin;
+  int i;
+  assert(Abc_NtkIsStrash(pNtk));
+  assert(iVar < Abc_NtkCiNum(pNtk));
+
+  // collect the internal nodes
+  pObj = Abc_NtkCi(pNtk, iVar);
+  vNodes = Abc_NtkDfsReverseNodes(pNtk, &pObj, 1);
+
+  // assign the cofactors of the CI node to be constants
+  pObj->pCopy = Abc_ObjNot(Abc_AigConst1(pNtk));
+  pObj->pData = Abc_AigConst1(pNtk);
+
+  // quantify the nodes
+  Vec_PtrForEachEntry(Abc_Obj_t*, vNodes, pObj, i) {
+    for (pNext = pObj ? pObj->pCopy : pObj; pObj;
+         pObj = pNext, pNext = pObj ? pObj->pCopy : pObj) {
+      pFanin = Abc_ObjFanin0(pObj);
+      if (!Abc_NodeIsTravIdCurrent(pFanin)) {
+        pFanin->pCopy = pFanin;
+        pFanin->pData = pFanin;
+      }
+      pFanin = Abc_ObjFanin1(pObj);
+      if (!Abc_NodeIsTravIdCurrent(pFanin)) {
+        pFanin->pCopy = pFanin;
+        pFanin->pData = pFanin;
+      }
+      pObj->pCopy =
+          Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc, Abc_ObjChild0Copy(pObj),
+                     Abc_ObjChild1Copy(pObj));
+      pObj->pData =
+          Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc, Abc_ObjChild0Data(pObj),
+                     Abc_ObjChild1Data(pObj));
+    }
+  }
+  Vec_PtrFree(vNodes);
+
+  // update the affected COs
+  Abc_NtkForEachCo(pNtk, pObj, i) {
+    if (!Abc_NodeIsTravIdCurrent(pObj)) continue;
+    pFanin = Abc_ObjFanin0(pObj);
+    // get the result of quantification
+    if (fPos) {
+      pNext = Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc, Abc_ObjChild0Copy(pObj),
+                         Abc_ObjNot(Abc_ObjChild0Data(pObj)));
+    } else {
+      pNext = Abc_AigAnd((Abc_Aig_t*)pNtk->pManFunc,
+                         Abc_ObjNot(Abc_ObjChild0Copy(pObj)),
+                         Abc_ObjChild0Data(pObj));
+    }
+    pNext = Abc_ObjNotCond(pNext, Abc_ObjFaninC0(pObj));
+    if (Abc_ObjRegular(pNext) == pFanin) continue;
+    // update the fanins of the CO
+    Abc_ObjPatchFanin(pObj, pFanin, pNext);
+  }
 }
