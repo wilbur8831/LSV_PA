@@ -9,6 +9,40 @@ extern int Abc_NtkDSat(Abc_Ntk_t* pNtk, ABC_INT64_T, ABC_INT64_T, int, int, int,
                        int, int, int, int);
 }
 
+static Abc_Ntk_t* createPoTransitiveFaninCone(Abc_Ntk_t* pNtk, Abc_Obj_t* pPo) {
+  Abc_Ntk_t* pNtkCone =
+      Abc_NtkCreateCone(pNtk, Abc_ObjFanin0(pPo), Abc_ObjName(pPo), 0);
+  if (Abc_ObjFaninC0(pPo)) {
+    Abc_ObjSetFaninC(Abc_NtkPo(pNtkCone, 0), 0);
+  }
+  return pNtkCone;
+}
+
+static void collectNonSupportPis(Abc_Ntk_t* pNtk, Abc_Ntk_t* pNtkCone,
+                                 Vec_Ptr_t* vPosUnate, Vec_Ptr_t* vNegUnate) {
+  Abc_Obj_t* pPi;
+  int j;
+  Abc_NtkForEachPi(pNtk, pPi, j) {
+    if (!Abc_NtkFindCi(pNtkCone, Abc_ObjName(pPi))) {
+      Vec_PtrPush(vPosUnate, pPi);
+      Vec_PtrPush(vNegUnate, pPi);
+    }
+  }
+}
+
+static Vec_Ptr_t* collectPiMapping(Abc_Ntk_t* pNtk, Abc_Ntk_t* pNtkCone) {
+  Vec_Ptr_t* vPiMapping = Vec_PtrStart(Abc_NtkPiNum(pNtkCone));
+  Abc_Obj_t* pPi;
+  int j;
+  Abc_NtkForEachPi(pNtkCone, pPi, j) {
+    Vec_PtrWriteEntry(vPiMapping, j, Abc_NtkFindCi(pNtk, Abc_ObjName(pPi)));
+  }
+  return vPiMapping;
+}
+
+static void analyzePoUnateIncrementalSat(Abc_Ntk_t*, Vec_Ptr_t*, Vec_Ptr_t*,
+                                         Vec_Ptr_t*, Vec_Ptr_t*);
+
 static void printPoUnateInfo(Abc_Ntk_t*, Abc_Obj_t*, int, Vec_Ptr_t*,
                              Vec_Ptr_t*, Vec_Ptr_t*, int);
 static void printNodeUnateInfoLsvFormat(Abc_Obj_t*, Vec_Ptr_t*, Vec_Ptr_t*,
@@ -169,74 +203,68 @@ void Lsv_NtkPrintPoUnate(Abc_Ntk_t* pNtk, int fLsvOutputFormat) {
     Vec_PtrClear(vPosUnate);
     Vec_PtrClear(vNegUnate);
     Vec_PtrClear(vBinate);
-    Abc_Ntk_t* pNtkCone =
-        Abc_NtkCreateCone(pNtk, Abc_ObjFanin0(pPo), Abc_ObjName(pPo), 0);
-    if (Abc_ObjFaninC0(pPo)) {
-      Abc_ObjSetFaninC(Abc_NtkPo(pNtkCone, 0), 0);
-    }
-    Abc_Obj_t* pPi;
-    int j;
-    Abc_NtkForEachPi(pNtk, pPi, j) {
-      if (!Abc_NtkFindCi(pNtkCone, Abc_ObjName(pPi))) {
-        Vec_PtrPush(vPosUnate, pPi);
-        Vec_PtrPush(vNegUnate, pPi);
-      }
-    }
-    Vec_Ptr_t* vPiMapping = Vec_PtrStart(Abc_NtkPiNum(pNtkCone));
-    Abc_NtkForEachPi(pNtkCone, pPi, j) {
-      Vec_PtrWriteEntry(vPiMapping, j, Abc_NtkFindCi(pNtk, Abc_ObjName(pPi)));
-    }
-    Aig_Man_t* pMan = Abc_NtkToDar(pNtkCone, 0, 0);
-    Cnf_Dat_t* pCnfPositiveCofactor = Cnf_Derive(pMan, Aig_ManCoNum(pMan));
-    Cnf_Dat_t* pCnfNegativeCofactor = Cnf_DataDup(pCnfPositiveCofactor);
-    Cnf_DataLift(pCnfNegativeCofactor, pCnfPositiveCofactor->nVars);
-    sat_solver* pSatSolver = sat_solver_new();
-    sat_solver_setnvars(
-        pSatSolver, pCnfPositiveCofactor->nVars + pCnfNegativeCofactor->nVars);
-    writeCnfIntoSolver(pCnfPositiveCofactor, pSatSolver);
-    writeCnfIntoSolver(pCnfNegativeCofactor, pSatSolver);
-    Vec_Int_t* vEnableVars = Vec_IntAlloc(Aig_ManCiNum(pMan));
-    Aig_Obj_t* pCi;
-    Aig_ManForEachCi(pMan, pCi, j) {
-      Vec_IntPush(vEnableVars, sat_solver_addvar(pSatSolver));
-      sat_solver_add_buffer_enable(
-          pSatSolver, pCnfPositiveCofactor->pVarNums[Aig_ObjId(pCi)],
-          pCnfNegativeCofactor->pVarNums[Aig_ObjId(pCi)],
-          Vec_IntEntryLast(vEnableVars), 0);
-    }
-    Aig_ManForEachCi(pMan, pCi, j) {
-      bool isPosUnate = false;
-      bool isNegUnate = false;
-      if (isPositiveUnate(pSatSolver, pCnfPositiveCofactor,
-                          pCnfNegativeCofactor, vEnableVars, pMan, j)) {
-        Vec_PtrPush(vPosUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
-        isPosUnate = true;
-      }
-      if (isNegativeUnate(pSatSolver, pCnfPositiveCofactor,
-                          pCnfNegativeCofactor, vEnableVars, pMan, j)) {
-        Vec_PtrPush(vNegUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
-        isNegUnate = true;
-      }
-      if (!isPosUnate && !isNegUnate) {
-        Vec_PtrPush(vBinate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
-      }
-    }
+    Abc_Ntk_t* pNtkCone = createPoTransitiveFaninCone(pNtk, pPo);
+    collectNonSupportPis(pNtk, pNtkCone, vPosUnate, vNegUnate);
+    Vec_Ptr_t* vPiMapping = collectPiMapping(pNtk, pNtkCone);
+    analyzePoUnateIncrementalSat(pNtkCone, vPiMapping, vPosUnate, vNegUnate,
+                                 vBinate);
     Vec_PtrSort(vPosUnate, (int (*)())Vec_PtrSortCompareObjId);
     Vec_PtrSort(vNegUnate, (int (*)())Vec_PtrSortCompareObjId);
     Vec_PtrSort(vBinate, (int (*)())Vec_PtrSortCompareObjId);
     printPoUnateInfo(pNtk, pPo, i, vPosUnate, vNegUnate, vBinate,
                      fLsvOutputFormat);
-    Aig_ManStop(pMan);
-    Cnf_DataFree(pCnfPositiveCofactor);
-    Cnf_DataFree(pCnfNegativeCofactor);
-    sat_solver_delete(pSatSolver);
-    Vec_IntFree(vEnableVars);
     Abc_NtkDelete(pNtkCone);
     Vec_PtrFree(vPiMapping);
   }
   Vec_PtrFree(vPosUnate);
   Vec_PtrFree(vNegUnate);
   Vec_PtrFree(vBinate);
+}
+
+void analyzePoUnateIncrementalSat(Abc_Ntk_t* pNtkCone, Vec_Ptr_t* vPiMapping,
+                                  Vec_Ptr_t* vPosUnate, Vec_Ptr_t* vNegUnate,
+                                  Vec_Ptr_t* vBinate) {
+  Aig_Man_t* pMan = Abc_NtkToDar(pNtkCone, 0, 0);
+  Cnf_Dat_t* pCnfPositiveCofactor = Cnf_Derive(pMan, Aig_ManCoNum(pMan));
+  Cnf_Dat_t* pCnfNegativeCofactor = Cnf_DataDup(pCnfPositiveCofactor);
+  Cnf_DataLift(pCnfNegativeCofactor, pCnfPositiveCofactor->nVars);
+  sat_solver* pSatSolver = sat_solver_new();
+  sat_solver_setnvars(
+      pSatSolver, pCnfPositiveCofactor->nVars + pCnfNegativeCofactor->nVars);
+  writeCnfIntoSolver(pCnfPositiveCofactor, pSatSolver);
+  writeCnfIntoSolver(pCnfNegativeCofactor, pSatSolver);
+  Vec_Int_t* vEnableVars = Vec_IntAlloc(Aig_ManCiNum(pMan));
+  Aig_Obj_t* pCi;
+  int j;
+  Aig_ManForEachCi(pMan, pCi, j) {
+    Vec_IntPush(vEnableVars, sat_solver_addvar(pSatSolver));
+    sat_solver_add_buffer_enable(pSatSolver,
+                                 pCnfPositiveCofactor->pVarNums[Aig_ObjId(pCi)],
+                                 pCnfNegativeCofactor->pVarNums[Aig_ObjId(pCi)],
+                                 Vec_IntEntryLast(vEnableVars), 0);
+  }
+  Aig_ManForEachCi(pMan, pCi, j) {
+    bool isPosUnate = false;
+    bool isNegUnate = false;
+    if (isPositiveUnate(pSatSolver, pCnfPositiveCofactor, pCnfNegativeCofactor,
+                        vEnableVars, pMan, j)) {
+      Vec_PtrPush(vPosUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+      isPosUnate = true;
+    }
+    if (isNegativeUnate(pSatSolver, pCnfPositiveCofactor, pCnfNegativeCofactor,
+                        vEnableVars, pMan, j)) {
+      Vec_PtrPush(vNegUnate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+      isNegUnate = true;
+    }
+    if (!isPosUnate && !isNegUnate) {
+      Vec_PtrPush(vBinate, (Abc_Obj_t*)Vec_PtrEntry(vPiMapping, j));
+    }
+  }
+  Aig_ManStop(pMan);
+  Cnf_DataFree(pCnfPositiveCofactor);
+  Cnf_DataFree(pCnfNegativeCofactor);
+  sat_solver_delete(pSatSolver);
+  Vec_IntFree(vEnableVars);
 }
 
 void writeCnfIntoSolver(Cnf_Dat_t* pCnf, sat_solver* pSat) {
