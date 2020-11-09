@@ -40,8 +40,6 @@ node c-out:
 To ease the grading process of your code,
 please print the primary outputs in the order of `Abc_NtkForEachPo()`.
 Please print the names of primary inputs returned by function `Abc_ObjName()` in a single line, separate their names with commas, and sort them in an increasing order with respect to their object IDs returned by function `Abc_ObjId()`.
-
-If there is a primary output without any primary input in its transitive fanin cone, please do not print this primary output.
 If there is no satisfying primary input for a certain unateness,
 please do not print an empty line.
 That is, for example, if there is no binate primary input of a primary output, do not print such line
