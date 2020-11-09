@@ -23,7 +23,7 @@ You can assume the input network given to your command is already converted into
 
 We say that a primary output _f_ is _positive unate_ in terms of a primary input _x_ if its function _F_ (encoded by the AIG) satisfies _F(...,x=0,...) &rarr; F(...,x=1,...)_.
 Similarly, _f_ is _negative unate_ in terms of _x_ if _F_ satisfies _F(...,x=1,...) &rarr; F(...,x=0,...)_.
-Moreover, _f_ is called _binate_ in terms of _x_ if _F_ does not satisfy either of the above equations.
+Moreover, _f_ is called _binate_ in terms of _x_ if _f_ is neither positive nor negative unate in terms of _x_.
 
 As an example, for the following AIG,
 ![strash](../example/full_adder_strash.png)
