@@ -26,6 +26,7 @@ Similarly, _f_ is _negative unate_ in terms of _x_ if _F_ satisfies _F(...,x=1,.
 Moreover, _f_ is called _binate_ in terms of _x_ if _f_ is neither positive nor negative unate in terms of _x_.
 
 As an example, for the following AIG,
+
 ![strash](../example/full_adder_strash.png)
 
 your program prints:
