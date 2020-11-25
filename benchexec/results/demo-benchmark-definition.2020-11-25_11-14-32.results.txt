@@ -1,0 +1,95 @@
+   BENCHMARK INFORMATION
+benchmark definition:    benchexec/demo-benchmark-definition.xml
+name:                    demo-benchmark-definition
+run sets:                resyn2, dc2
+date:                    Wed, 2020-11-25 11:14:32 CST
+tool:                    ABC
+tool executable:         ./abc
+options:                 
+parallel runs:           4
+resource limits:
+- memory:                2000.0 MB
+- time:                  60 s
+- cpu cores:             1
+hardware requirements:
+- cpu cores:             1
+- memory:                2000.0 MB
+------------------------------------------------------------
+
+   SYSTEM INFORMATION
+host:                    nianzelee-XPS-13-9370
+os:                      Linux-5.4.0-54-generic-x86_64-with-glibc2.29
+cpu:                     Intel Core i7-8550U CPU @ 1.80GHz
+- cores:                 8
+- max frequency:         4000.0 MHz
+- turbo boost enabled:   True
+ram:                     16476.086272 MB
+------------------------------------------------------------
+
+
+
+resyn2
+Run set 1 of 2 with options '-c resyn2; ps' and propertyfile 'None'
+
+inputfile                       status                       cpu time   wall time        host
+---------------------------------------------------------------------------------------------
+random_control/arbiter.aig      done                             1.30        1.31        None
+random_control/cavlc.aig        done                             0.13        0.13        None
+random_control/ctrl.aig         done                             0.08        0.09        None
+random_control/dec.aig          done                             0.10        0.10        None
+random_control/i2c.aig          done                             0.16        0.16        None
+random_control/int2float.aig    done                             0.09        0.09        None
+random_control/mem_ctrl.aig     done                             4.68        4.69        None
+random_control/priority.aig     done                             0.15        0.15        None
+random_control/router.aig       done                             0.09        0.09        None
+random_control/voter.aig        done                             2.14        2.14        None
+arithmetic/adder.aig            done                             0.14        0.14        None
+arithmetic/bar.aig              done                             0.29        0.29        None
+arithmetic/div.aig              done                             6.74        6.74        None
+arithmetic/hyp.aig              TIMEOUT                         61.00       61.01        None
+arithmetic/log2.aig             done                             6.00        6.00        None
+arithmetic/max.aig              done                             0.31        0.31        None
+arithmetic/multiplier.aig       done                             4.38        4.39        None
+arithmetic/sin.aig              done                             0.91        0.91        None
+arithmetic/sqrt.aig             done                             3.96        3.96        None
+arithmetic/square.aig           done                             3.18        3.18        None
+---------------------------------------------------------------------------------------------
+Run set 1                       done                            96.18       63.11           -
+
+
+dc2
+Run set 2 of 2 with options '-c dc2; ps' and propertyfile 'None'
+
+inputfile                       status                       cpu time   wall time        host
+---------------------------------------------------------------------------------------------
+random_control/arbiter.aig      done                             1.00        1.01        None
+random_control/cavlc.aig        done                             0.08        0.09        None
+random_control/ctrl.aig         done                             0.05        0.05        None
+random_control/dec.aig          done                             0.05        0.06        None
+random_control/i2c.aig          done                             0.12        0.12        None
+random_control/int2float.aig    done                             0.05        0.05        None
+random_control/mem_ctrl.aig     done                             3.59        3.59        None
+random_control/priority.aig     done                             0.08        0.08        None
+random_control/router.aig       done                             0.05        0.06        None
+random_control/voter.aig        done                             0.77        0.77        None
+arithmetic/adder.aig            done                             0.08        0.08        None
+arithmetic/bar.aig              done                             0.25        0.25        None
+arithmetic/div.aig              done                             4.70        4.70        None
+arithmetic/hyp.aig              done                            22.05       22.06        None
+arithmetic/log2.aig             done                             2.82        2.83        None
+arithmetic/max.aig              done                             0.24        0.24        None
+arithmetic/multiplier.aig       done                             2.21        2.21        None
+arithmetic/sin.aig              done                             0.53        0.53        None
+arithmetic/sqrt.aig             done                             3.10        3.10        None
+arithmetic/square.aig           done                             1.53        1.53        None
+---------------------------------------------------------------------------------------------
+Run set 2                       done                            43.73       23.89           -
+
+Statistics:             40 Files
+  correct:               0
+    correct true:        0
+    correct false:       0
+  incorrect:             0
+    incorrect true:      0
+    incorrect false:     0
+  unknown:               1

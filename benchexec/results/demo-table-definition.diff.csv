@@ -1,0 +1,4 @@
+tool	ABC 	ABC 	ABC 	ABC 	ABC 	ABC 	ABC 	ABC 	ABC 	ABC 
+run set	resyn2	resyn2	resyn2	resyn2	resyn2	dc2	dc2	dc2	dc2	dc2
+benchmarks/	status	cputime (s)	memory (MB)	#And	#Lev	status	cputime (s)	memory (MB)	#And	#Lev
+arithmetic/hyp.aig	TIMEOUT	61.001897683	154.492928			done	22.053377496	151.527424	211689	24882

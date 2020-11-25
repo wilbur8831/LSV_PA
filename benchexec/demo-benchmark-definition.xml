@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE benchmark PUBLIC "+//IDN sosy-lab.org//DTD BenchExec benchmark 1.18//EN" "https://www.sosy-lab.org/benchexec/benchmark-1.18.dtd">
+<benchmark tool="abc" timelimit="60 s" hardtimelimit="90 s" memlimit="2 GB" cpuCores="1">
+  <rundefinition name="resyn2">
+      <option name="-c">resyn2; ps</option>
+  </rundefinition>
+
+  <rundefinition name="dc2">
+      <option name="-c">dc2; ps</option>
+  </rundefinition>
+  
+  <tasks name="EPFL-random_control">
+      <include>../benchmarks/random_control/*.aig</include>
+  </tasks>
+
+  <tasks name="EPFL-arithmetic">
+      <include>../benchmarks/arithmetic/*.aig</include>
+  </tasks>
+</benchmark>
