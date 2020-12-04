@@ -12,7 +12,5 @@ jobs:
       - name: Sanity test for PA2
         if: ${{ success() && github.ref != 'master' }}
         run: |
-        ./abc -c 'lsv_print_pounate' lsv/example/ctrl.aig | tee output.txt
-        diff -uwiB output.txt lsv/pa2/ref/ctrl.txt
-
-
+          ./abc -c 'lsv_print_pounate' lsv/example/ctrl.aig | tee output.txt
+          diff -uwiB output.txt lsv/pa2/ref/ctrl.txt
