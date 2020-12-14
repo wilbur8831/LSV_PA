@@ -144,4 +144,4 @@ alias fix_blif    "undc; strash; zero"
 alias recadd3     "st; rec_add3; b; rec_add3; dc2; rec_add3; if -K 8; bidec; st; rec_add3; dc2; rec_add3; if -g -K 6; st; rec_add3"
 
 # LSV-PA alais
-alias lsv    "r lsv/example/full_adder.blif; lsv_print_sopunate"
+alias lsv    "r lsv/example/full_adder.blif; st; lsv_print_pounate"
