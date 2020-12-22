@@ -4,6 +4,6 @@
   <column title="status"/>
   <column title="cputime"/>
   <column title="memory" sourceUnit="B" displayUnit="MB"/>
-  <column title="#And">and =</column>
-  <column title="#Lev">lev =</column>
+  <column title="#And">and</column>
+  <column title="#Lev">lev</column>
 </table>
