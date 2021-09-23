@@ -1351,7 +1351,8 @@ static int Io_MvParseLineSubckt( Io_MvMod_t * p, char * pLine )
     Abc_Ntk_t * pModel;
     Abc_Obj_t * pBox, * pNet, * pTerm;
     char * pToken, * pName, * pName2, ** ppNames;
-    int nEquals, Last, i, k;
+    int nEquals, i, k;
+    word Last;
 
     // split the line into tokens
     nEquals = Io_MvCountChars( pLine, '=' );
@@ -1404,9 +1405,9 @@ static int Io_MvParseLineSubckt( Io_MvMod_t * p, char * pLine )
         pName2 = NULL;
         pName = Abc_ObjName(Abc_ObjFanout0(pTerm));
         for ( k = 0; k < nEquals; k++ )
-            if ( !strcmp( ppNames[2*((k+Last)%nEquals)], pName ) )
+            if ( !strcmp( ppNames[2*(int)((k+Last)%nEquals)], pName ) )
             {
-                pName2 = ppNames[2*((k+Last)%nEquals)+1];
+                pName2 = ppNames[2*(int)((k+Last)%nEquals)+1];
                 Last = k+Last+1;
                 break;
             }
@@ -1656,7 +1657,7 @@ static int Io_MvWriteValues( Abc_Obj_t * pNode, Vec_Str_t * vFunc )
 ***********************************************************************/
 static int Io_MvParseLiteralMv( Io_MvMod_t * p, Abc_Obj_t * pNode, char * pToken, Vec_Str_t * vFunc, int iLit )
 {
-    char Buffer[10];
+    char Buffer[16];
     Io_MvVar_t * pVar;
     Abc_Obj_t * pFanin, * pNet;
     char * pCur, * pNext;

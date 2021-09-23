@@ -61,6 +61,8 @@ struct Vec_Wrd_t_
     for ( i = Start; (i < Stop) && (((Entry) = Vec_WrdEntry(vVec, i)), 1); i++ )
 #define Vec_WrdForEachEntryReverse( vVec, pEntry, i )                                       \
     for ( i = Vec_WrdSize(vVec) - 1; (i >= 0) && (((pEntry) = Vec_WrdEntry(vVec, i)), 1); i-- )
+#define Vec_WrdForEachEntryDouble( vVec, Entry1, Entry2, i )                                \
+    for ( i = 0; (i+1 < Vec_WrdSize(vVec)) && (((Entry1) = Vec_WrdEntry(vVec, i)), 1) && (((Entry2) = Vec_WrdEntry(vVec, i+1)), 1); i += 2 )
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -668,6 +670,30 @@ static inline void Vec_WrdPush( Vec_Wrd_t * p, word Entry )
             Vec_WrdGrow( p, 2 * p->nCap );
     }
     p->pArray[p->nSize++] = Entry;
+}
+static inline void Vec_WrdPushTwo( Vec_Wrd_t * p, word Entry1, word Entry2 )
+{
+    Vec_WrdPush( p, Entry1 );
+    Vec_WrdPush( p, Entry2 );
+}
+static inline void Vec_WrdPushThree( Vec_Wrd_t * p, word Entry1, word Entry2, word Entry3 )
+{
+    Vec_WrdPush( p, Entry1 );
+    Vec_WrdPush( p, Entry2 );
+    Vec_WrdPush( p, Entry3 );
+}
+static inline void Vec_WrdPushFour( Vec_Wrd_t * p, word Entry1, word Entry2, word Entry3, word Entry4 )
+{
+    Vec_WrdPush( p, Entry1 );
+    Vec_WrdPush( p, Entry2 );
+    Vec_WrdPush( p, Entry3 );
+    Vec_WrdPush( p, Entry4 );
+}
+static inline void Vec_WrdPushArray( Vec_Wrd_t * p, word * pEntries, int nEntries )
+{
+    int i;
+    for ( i = 0; i < nEntries; i++ )
+        Vec_WrdPush( p, pEntries[i] );
 }
 
 /**Function*************************************************************
@@ -1330,6 +1356,66 @@ static inline Vec_Wrd_t * Vec_WrdReadHex( char * pFileName, int * pnWords, int f
     return p;
 }
 
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+static inline void Vec_WrdDumpBin( char * pFileName, Vec_Wrd_t * p, int fVerbose )
+{
+    int RetValue;
+    FILE * pFile = fopen( pFileName, "wb" );
+    if ( pFile == NULL )
+    {
+        printf( "Cannot open file \"%s\" for writing.\n", pFileName );
+        return;
+    }
+    RetValue = fwrite( Vec_WrdArray(p), 1, 8*Vec_WrdSize(p), pFile );
+    fclose( pFile );
+    if ( RetValue != 8*Vec_WrdSize(p) )
+        printf( "Error reading data from file.\n" );
+    if ( fVerbose )
+        printf( "Written %d words of simulation data into file \"%s\".\n", Vec_WrdSize(p), pFileName );
+}
+static inline Vec_Wrd_t * Vec_WrdReadBin( char * pFileName, int fVerbose )
+{
+    Vec_Wrd_t * p = NULL; int nSize, RetValue;
+    FILE * pFile = fopen( pFileName, "rb" );
+    if ( pFile == NULL )
+    {
+        printf( "Cannot open file \"%s\" for reading.\n", pFileName );
+        return NULL;
+    }
+    fseek( pFile, 0, SEEK_END );
+    nSize = ftell( pFile );
+    if ( nSize == 0 )
+    {
+        printf( "The input file is empty.\n" );
+        fclose( pFile );
+        return NULL;
+    }
+    if ( nSize % 8 > 0 )
+    {
+        printf( "Cannot read file with simulation data that is not aligned at 8 bytes (remainder = %d).\n", nSize % 8 );
+        fclose( pFile );
+        return NULL;
+    }
+    rewind( pFile );
+    p = Vec_WrdStart( nSize/8 );
+    RetValue = fread( Vec_WrdArray(p), 1, nSize, pFile );
+    fclose( pFile );
+    if ( RetValue != nSize )
+        printf( "Error reading data from file.\n" );
+    if ( fVerbose )
+        printf( "Read %d words of simulation data from file \"%s\".\n", nSize/8, pFileName );
+    return p;
+}
 
 ABC_NAMESPACE_HEADER_END
 

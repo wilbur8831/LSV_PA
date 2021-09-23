@@ -858,6 +858,7 @@ Abc_Ntk_t * Abc_NtkFromMappedGia( Gia_Man_t * p, int fFindEnables, int fUseBuffs
             Gia_LutForEachFanin( p, i, iFan, k )
                 Abc_ObjAddFanin( pObjNew, Abc_NtkObj(pNtkNew, Gia_ObjValue(Gia_ManObj(p, iFan))) );
             pObjNew->pData = Abc_ObjHopFromGia( (Hop_Man_t *)pNtkNew->pManFunc, p, i, vReflect );
+            pObjNew->fPersist = Gia_ObjLutIsMux(p, i) && Gia_ObjLutSize(p, i) == 3;
             pObj->Value = Abc_ObjId( pObjNew );
         }
         Vec_PtrFree( vReflect );
@@ -1650,6 +1651,7 @@ Abc_Ntk_t * Abc_NtkDChoice( Abc_Ntk_t * pNtk, int fBalance, int fUpdateLevel, in
 ***********************************************************************/
 Abc_Ntk_t * Abc_NtkDch( Abc_Ntk_t * pNtk, Dch_Pars_t * pPars )
 {
+    extern Aig_Man_t * Dar_ManChoiceNew( Aig_Man_t * pAig, Dch_Pars_t * pPars );
     extern Gia_Man_t * Dar_NewChoiceSynthesis( Aig_Man_t * pAig, int fBalance, int fUpdateLevel, int fPower, int fLightSynth, int fVerbose );
     extern Aig_Man_t * Cec_ComputeChoices( Gia_Man_t * pGia, Dch_Pars_t * pPars );
 
@@ -1661,23 +1663,28 @@ Abc_Ntk_t * Abc_NtkDch( Abc_Ntk_t * pNtk, Dch_Pars_t * pPars )
     pMan = Abc_NtkToDar( pNtk, 0, 0 );
     if ( pMan == NULL )
         return NULL;
+    if ( pPars->fUseNew )
+        pMan = Dar_ManChoiceNew( pMan, pPars );
+    else 
+    {
 clk = Abc_Clock();
-    if ( pPars->fSynthesis )
-        pGia = Dar_NewChoiceSynthesis( pMan, 1, 1, pPars->fPower, pPars->fLightSynth, pPars->fVerbose );
-    else
-    {
-        pGia = Gia_ManFromAig( pMan );
-        Aig_ManStop( pMan );
-    }
+        if ( pPars->fSynthesis )
+            pGia = Dar_NewChoiceSynthesis( pMan, 1, 1, pPars->fPower, pPars->fLightSynth, pPars->fVerbose );
+        else
+        {
+            pGia = Gia_ManFromAig( pMan );
+            Aig_ManStop( pMan );
+        }
 pPars->timeSynth = Abc_Clock() - clk;
-    if ( pPars->fUseGia )
-        pMan = Cec_ComputeChoices( pGia, pPars );
-    else
-    {
-        pMan = Gia_ManToAigSkip( pGia, 3 );
-        Gia_ManStop( pGia );
-        pMan = Dch_ComputeChoices( pTemp = pMan, pPars );
-        Aig_ManStop( pTemp );
+        if ( pPars->fUseGia )
+            pMan = Cec_ComputeChoices( pGia, pPars );
+        else
+        {
+            pMan = Gia_ManToAigSkip( pGia, 3 );
+            Gia_ManStop( pGia );
+            pMan = Dch_ComputeChoices( pTemp = pMan, pPars );
+            Aig_ManStop( pTemp );
+        }
     }
     pNtkAig = Abc_NtkFromDarChoices( pNtk, pMan );
     Aig_ManStop( pMan );

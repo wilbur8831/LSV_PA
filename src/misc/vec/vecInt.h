@@ -150,6 +150,23 @@ static inline Vec_Int_t * Vec_IntStartRange( int First, int Range )
         p->pArray[i] = First + i;
     return p;
 }
+static inline Vec_Int_t * Vec_IntStartRandomLimit( int nSize, int Upper, int Lower )
+{
+    Vec_Int_t * p = Vec_IntAlloc( nSize );
+    int i, Gap = Upper - Lower + 1;
+    for ( i = 0; i < p->nSize; i++ )
+        p->pArray[i] = Lower + Abc_Random(0) % Gap;
+    return p;
+}
+static inline void Vec_IntRandomizeOrder( Vec_Int_t * p )
+{
+    int v;
+    for ( v = 0; v < p->nSize; v++ )
+    {
+        int vRand = Abc_Random(0) % p->nSize;
+        ABC_SWAP( int, p->pArray[vRand], p->pArray[v] );
+    }
+}
 
 /**Function*************************************************************
 
@@ -734,6 +751,11 @@ static inline void Vec_IntPush( Vec_Int_t * p, int Entry )
     }
     p->pArray[p->nSize++] = Entry;
 }
+static inline int Vec_IntPushReturn( Vec_Int_t * p, int Entry )
+{
+    Vec_IntPush( p, Entry );
+    return Entry;
+}
 static inline void Vec_IntPushTwo( Vec_Int_t * p, int Entry1, int Entry2 )
 {
     Vec_IntPush( p, Entry1 );
@@ -757,6 +779,12 @@ static inline void Vec_IntPushArray( Vec_Int_t * p, int * pEntries, int nEntries
     int i;
     for ( i = 0; i < nEntries; i++ )
         Vec_IntPush( p, pEntries[i] );
+}
+static inline void Vec_IntShift( Vec_Int_t * p, int Shift )
+{
+    p->nSize  -= Shift;
+    p->nCap   -= Shift;
+    p->pArray += Shift;
 }
 
 /**Function*************************************************************
@@ -832,6 +860,52 @@ static inline void Vec_IntPushOrderCost( Vec_Int_t * p, int Entry, Vec_Int_t * v
         else
             break;
     p->pArray[i+1] = Entry;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Check if the array is ordered.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+static inline int Vec_IntIsOrdered( Vec_Int_t * p, int fReverse )
+{
+    int i;
+    if ( fReverse )
+    {
+        for ( i = 1; i < p->nSize; i++ )
+            if ( p->pArray[i-1] < p->pArray[i] )
+                return 0;
+    }
+    else
+    {
+        for ( i = 1; i < p->nSize; i++ )
+            if ( p->pArray[i-1] > p->pArray[i] )
+                return 0;
+    }
+    return 1;
+}
+static inline int Vec_IntIsOrderedCost( Vec_Int_t * p, Vec_Int_t * vCost, int fReverse )
+{
+    int i;
+    if ( fReverse )
+    {
+        for ( i = 1; i < p->nSize; i++ )
+            if ( Vec_IntEntry(vCost, p->pArray[i-1]) < Vec_IntEntry(vCost, p->pArray[i]) )
+                return 0;
+    }
+    else
+    {
+        for ( i = 1; i < p->nSize; i++ )
+            if ( Vec_IntEntry(vCost, p->pArray[i-1]) > Vec_IntEntry(vCost, p->pArray[i]) )
+                return 0;
+    }
+    return 1;
 }
 
 /**Function*************************************************************
@@ -1316,6 +1390,19 @@ static inline int Vec_IntEqual( Vec_Int_t * p1, Vec_Int_t * p2 )
     for ( i = 0; i < p1->nSize; i++ )
         if ( p1->pArray[i] != p2->pArray[i] )
             return 0;
+    return 1;
+}
+static inline int Vec_IntContained( Vec_Int_t * pSmall, Vec_Int_t * pLarge ) 
+{
+    int i, k;
+    for ( i = 0; i < pSmall->nSize; i++ )
+    {
+        for ( k = 0; k < pLarge->nSize; k++ )
+            if ( pSmall->pArray[i] == pLarge->pArray[k] )
+                break;
+        if ( k == pLarge->nSize )
+            return 0;
+    }
     return 1;
 }
 

@@ -73,11 +73,24 @@ Gia_Man_t * Gia_ManDeepSynOne( int nNoImpr, int TimeOut, int nAnds, int Seed, in
         else if ( fCom == 0 )
             pComp = "; &dc2";
         sprintf( Command, "&dch%s; &if -a -K %d; &mfs -e -W 20 -L 20%s%s",
-            fDch ? " -f" : "", KLut, fFx ? "; &fx" : "", pComp );
-        if ( Cmd_CommandExecute(Abc_FrameGetGlobalFrame(), Command) )
+            fDch ? " -f" : "", KLut, fFx ? "; &fx; &st" : "", pComp );
+        if ( Abc_FrameIsBatchMode() )
         {
-            Abc_Print( 1, "Something did not work out with the command \"%s\".\n", Command );
-            return NULL;
+            if ( Cmd_CommandExecute(Abc_FrameGetGlobalFrame(), Command) )
+            {
+                Abc_Print( 1, "Something did not work out with the command \"%s\".\n", Command );
+                return NULL;
+            }
+        }
+        else
+        {
+            Abc_FrameSetBatchMode( 1 );
+            if ( Cmd_CommandExecute(Abc_FrameGetGlobalFrame(), Command) )
+            {
+                Abc_Print( 1, "Something did not work out with the command \"%s\".\n", Command );
+                return NULL;
+            }
+            Abc_FrameSetBatchMode( 0 );
         }
         pTemp = Abc_FrameReadGia(Abc_FrameGetGlobalFrame());
         if ( Gia_ManAndNum(pNew) > Gia_ManAndNum(pTemp) )

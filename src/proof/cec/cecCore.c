@@ -45,6 +45,7 @@ ABC_NAMESPACE_IMPL_START
 void Cec_ManSatSetDefaultParams( Cec_ParSat_t * p )
 {
     memset( p, 0, sizeof(Cec_ParSat_t) );
+    p->SolverType     =      -1;  // SAT solver type
     p->nBTLimit       =     100;  // conflict limit at a node
     p->nSatVarMax     =    2000;  // the max number of SAT variables
     p->nCallsRecycle  =     200;  // calls to perform before recycling SAT solver
@@ -232,14 +233,17 @@ void Cec_ManChcSetDefaultParams( Cec_ParChc_t * p )
   SeeAlso     []
 
 ***********************************************************************/
-Gia_Man_t * Cec_ManSatSolving( Gia_Man_t * pAig, Cec_ParSat_t * pPars )
+Gia_Man_t * Cec_ManSatSolving( Gia_Man_t * pAig, Cec_ParSat_t * pPars, int f0Proved )
 {
     Gia_Man_t * pNew;
     Cec_ManPat_t * pPat;
     pPat = Cec_ManPatStart();
-    Cec_ManSatSolve( pPat, pAig, pPars, NULL, NULL, NULL );
+    if ( pPars->SolverType == -1 )
+        Cec_ManSatSolve( pPat, pAig, pPars, NULL, NULL, NULL, f0Proved );
+    else
+        CecG_ManSatSolve( pPat, pAig, pPars, f0Proved );
 //    pNew = Gia_ManDupDfsSkip( pAig );
-    pNew = Gia_ManDup( pAig );
+    pNew = Gia_ManCleanup( pAig );
     Cec_ManPatStop( pPat );
     pNew->vSeqModelVec = pAig->vSeqModelVec;
     pAig->vSeqModelVec = NULL;
@@ -445,7 +449,7 @@ clk = Abc_Clock();
         if ( pPars->fRunCSat )
             Cec_ManSatSolveCSat( pPat, pSrm, pParsSat ); 
         else
-            Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv ); 
+            Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
 p->timeSat += Abc_Clock() - clk;
         if ( Cec_ManFraClassesUpdate( p, pSim, pPat, pSrm ) )
         {

@@ -345,11 +345,12 @@ void Wlc_BlastFullAdder( Gia_Man_t * pNew, int a, int b, int c, int * pc, int * 
     if ( fCompl )
         *ps = Abc_LitNot(*ps), *pc = Abc_LitNot(*pc); 
 }
-void Wlc_BlastAdder( Gia_Man_t * pNew, int * pAdd0, int * pAdd1, int nBits, int Carry ) // result is in pAdd0
+int Wlc_BlastAdder( Gia_Man_t * pNew, int * pAdd0, int * pAdd1, int nBits, int Carry ) // result is in pAdd0
 {
     int b;
     for ( b = 0; b < nBits; b++ )
         Wlc_BlastFullAdder( pNew, pAdd0[b], pAdd1[b], Carry, &Carry, &pAdd0[b] );
+    return Carry;
 }
 void Wlc_BlastSubtract( Gia_Man_t * pNew, int * pAdd0, int * pAdd1, int nBits, int Carry ) // result is in pAdd0
 {
@@ -1022,7 +1023,7 @@ void Wlc_BlastReduceMatrix2( Gia_Man_t * pNew, Vec_Wec_t * vProds, Vec_Int_t * v
 }
 
 
-void Wlc_BlastMultiplier3( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla )
+void Wlc_BlastMultiplier3( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla, Vec_Wec_t ** pvProds )
 {
     Vec_Wec_t * vProds  = Vec_WecStart( nArgA + nArgB );
     Vec_Wec_t * vLevels = Vec_WecStart( nArgA + nArgB );
@@ -1043,7 +1044,10 @@ void Wlc_BlastMultiplier3( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA
         Vec_WecPush( vLevels, nArgA+nArgB-1, 0 );
     }
 
-    Wlc_BlastReduceMatrix( pNew, vProds, vLevels, vRes, fSigned, fCla );
+    if ( pvProds )
+        *pvProds = Vec_WecDup(vProds);
+    else
+        Wlc_BlastReduceMatrix( pNew, vProds, vLevels, vRes, fSigned, fCla );
 //    Wlc_BlastReduceMatrix2( pNew, vProds, vRes, fSigned, fCla );
 
     Vec_WecFree( vProds );
@@ -1086,7 +1090,7 @@ void Wlc_BlastDecoder( Gia_Man_t * pNew, int * pNum, int nNum, Vec_Int_t * vTmp,
         Vec_IntPush( vRes, iMint );
     }
 }
-void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla )
+void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla, Vec_Wec_t ** pvProds )
 {
     Vec_Wec_t * vProds  = Vec_WecStart( nArgA + nArgB + 3 );
     Vec_Wec_t * vLevels = Vec_WecStart( nArgA + nArgB + 3 );
@@ -1159,9 +1163,11 @@ void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int 
     //Vec_WecPrint( vProds, 0 );
     //Wlc_BlastPrintMatrix( pNew, vProds, 1 );
     //printf( "Cutoff ID for partial products = %d.\n", Gia_ManObjNum(pNew) );
-    Wlc_BlastReduceMatrix( pNew, vProds, vLevels, vRes, fSigned, fCla );
-//    Wlc_BlastReduceMatrix2( pNew, vProds, vRes, fSigned, fCla );
-
+    if ( pvProds )
+        *pvProds = Vec_WecDup(vProds);
+    else
+        Wlc_BlastReduceMatrix( pNew, vProds, vLevels, vRes, fSigned, fCla );
+    //    Wlc_BlastReduceMatrix2( pNew, vProds, vRes, fSigned, fCla );
     Vec_WecFree( vProds );
     Vec_WecFree( vLevels );
     Vec_IntFree( vArgB );
@@ -1792,9 +1798,9 @@ Gia_Man_t * Wlc_NtkBitBlast( Wlc_Ntk_t * p, Wlc_BstPar_t * pParIn )
                 if ( Wlc_NtkCountConstBits(pArg0, nRangeMax) < Wlc_NtkCountConstBits(pArg1, nRangeMax) )
                     ABC_SWAP( int *, pArg0, pArg1 );
                 if ( pPar->fBooth )
-                    Wlc_BlastBooth( pNew, pArg0, pArg1, nRange0, nRange1, vRes, fSigned, pPar->fCla );
+                    Wlc_BlastBooth( pNew, pArg0, pArg1, nRange0, nRange1, vRes, fSigned, pPar->fCla, NULL );
                 else if ( pPar->fCla )
-                    Wlc_BlastMultiplier3( pNew, pArg0, pArg1, nRange0, nRange1, vRes, Wlc_ObjIsSignedFanin01(p, pObj), pPar->fCla );
+                    Wlc_BlastMultiplier3( pNew, pArg0, pArg1, nRange0, nRange1, vRes, Wlc_ObjIsSignedFanin01(p, pObj), pPar->fCla, NULL );
                 else
                     Wlc_BlastMultiplier( pNew, pArg0, pArg1, nRangeMax, nRangeMax, vTemp2, vRes, fSigned );
                 if ( nRange > Vec_IntSize(vRes) )
@@ -2487,6 +2493,98 @@ Gia_Man_t * Wlc_NtkBitBlast( Wlc_Ntk_t * p, Wlc_BstPar_t * pParIn )
         Vec_PtrFreeFree( pNew->vNamesOut );  pNew->vNamesOut = NULL;
     }
     pNew->vRegClasses = vRegClasses;
+    return pNew;
+}
+
+
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+float * Extra_FileReadFloat( FILE * pFile, int * pnFileSize )
+{
+    float * pBuffer;
+    int RetValue, nFileSize;
+    fseek( pFile, 0, SEEK_END );  
+    nFileSize = *pnFileSize = ftell( pFile );  
+    rewind( pFile ); 
+    assert( nFileSize%4 == 0 );
+    pBuffer = ABC_CALLOC( float, nFileSize/4 );
+    RetValue = fread( pBuffer, nFileSize, 1, pFile );
+    return pBuffer;
+}
+float * Extra_FileReadFloatContents( char * pFileName, int * pnFileSize )
+{
+    FILE * pFile;
+    float * pBuffer;
+    pFile = fopen( pFileName, "rb" );
+    pBuffer = pFile ? Extra_FileReadFloat( pFile, pnFileSize ) : NULL;
+    if ( pFile )  fclose( pFile );
+    return pBuffer;
+}
+static inline int Extra_FixedFound( int Value, int Fixed )
+{
+    Value  += 1 << (Fixed-1);
+    Value >>= Fixed;
+    return Value;
+}
+static inline int Extra_ConvertFloat8( float Value )
+{
+    return Extra_FixedFound( (int)(Value * (1 << 16)), 8 );
+}
+Gia_Man_t * Wlc_BlastArray( char * pFileName )
+{
+    int nFileSize = 0;
+    float * pBuffer = Extra_FileReadFloatContents( pFileName, &nFileSize );
+    int i, v, Value, nInputs = nFileSize/4 - 1;
+    Vec_Int_t * vArg0 = Vec_IntAlloc( 100 );
+    Vec_Int_t * vArg1 = Vec_IntAlloc( 100 );
+    Vec_Int_t * vTemp = Vec_IntAlloc( 100 );
+    Vec_Int_t * vRes  = Vec_IntAlloc( 100 );
+    Vec_Int_t * vSum  = Vec_IntAlloc( 100 );
+    Gia_Man_t * pTemp, * pNew = Gia_ManStart( 10000 );
+    pNew->pName = Abc_UtilStrsav( "blast" );
+    Gia_ManHashAlloc( pNew );
+    for ( i = 0; i < 8*nInputs; i++ )
+        Gia_ManAppendCi(pNew);
+
+    Value = (Extra_ConvertFloat8(pBuffer[0]) << 8) | (1 << 7);
+    for ( v = 0; v < 20; v++ )
+        Vec_IntPush( vSum, (Value >> v) & 1 );
+    
+    for ( i = 0; i < nInputs; i++ )
+    {
+        Value = Extra_ConvertFloat8( pBuffer[1+i] );
+
+        Vec_IntClear( vArg0 );
+        for ( v = 0; v < 8; v++ )
+            Vec_IntPush( vArg0, Gia_ManCiLit(pNew, 8*i+v) );
+
+        Vec_IntClear( vArg1 );
+        for ( v = 0; v < 12; v++ )
+            Vec_IntPush( vArg1, (Value >> v) & 1 );
+
+        Wlc_BlastMultiplier( pNew, Vec_IntArray(vArg0), Vec_IntArray(vArg1), 8, 12, vTemp, vRes, 1 );
+        Wlc_BlastAdder( pNew, Vec_IntArray(vSum), Vec_IntArray(vRes), 20, 0 );
+    }
+    ABC_FREE( pBuffer );
+    for ( v = 8; v < 16; v++ )
+        Gia_ManAppendCo( pNew, Vec_IntEntry(vSum, v) );
+    Vec_IntFree( vArg0 );
+    Vec_IntFree( vArg1 );
+    Vec_IntFree( vTemp );
+    Vec_IntFree( vRes );
+    Vec_IntFree( vSum );
+
+    pNew = Gia_ManCleanup( pTemp = pNew );
+    Gia_ManStop( pTemp );
     return pNew;
 }
 

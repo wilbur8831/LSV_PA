@@ -51,6 +51,8 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaMem.c \
     src/aig/gia/giaMfs.c \
     src/aig/gia/giaMini.c \
+    src/aig/gia/giaMinLut.c \
+    src/aig/gia/giaMinLut2.c \
     src/aig/gia/giaMuxes.c \
     src/aig/gia/giaNf.c \
     src/aig/gia/giaOf.c \
@@ -58,8 +60,11 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaPat.c \
     src/aig/gia/giaPf.c \
     src/aig/gia/giaQbf.c \
+    src/aig/gia/giaReshape1.c \
+    src/aig/gia/giaReshape2.c \
     src/aig/gia/giaResub.c \
     src/aig/gia/giaResub2.c \
+    src/aig/gia/giaResub3.c \
     src/aig/gia/giaRetime.c \
     src/aig/gia/giaRex.c \
     src/aig/gia/giaSatEdge.c \
@@ -76,8 +81,6 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaShrink7.c \
     src/aig/gia/giaSim.c \
     src/aig/gia/giaSim2.c \
-    src/aig/gia/giaSim4.c \
-    src/aig/gia/giaSim5.c \
     src/aig/gia/giaSimBase.c \
     src/aig/gia/giaSort.c \
     src/aig/gia/giaSpeedup.c \

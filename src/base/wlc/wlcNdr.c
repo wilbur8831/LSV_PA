@@ -263,7 +263,7 @@ void Wlc_NtkToNdrTest( Wlc_Ntk_t * pNtk )
         ppNames[i] = Wlc_ObjName(pNtk, i);
 
     // verify by writing Verilog
-    Ndr_WriteVerilog( NULL, pDesign, ppNames );
+    Ndr_WriteVerilog( NULL, pDesign, ppNames, 0 );
     Ndr_Write( "test.ndr", pDesign );
 
     // cleanup
@@ -487,7 +487,7 @@ Wlc_Ntk_t * Wlc_NtkFromNdr( void * pData )
     pNtk->pManName = Abc_NamStart( NameIdMax+1, 10 );
     for ( i = 1; i <= NameIdMax; i++ )
     {
-        char pName[20]; sprintf( pName, "s%0*d", nDigits, i );
+        char pName[100]; sprintf( pName, "s%0*d", nDigits, i );
         NameId = Abc_NamStrFindOrAdd( pNtk->pManName, pName, &fFound );
         assert( !fFound && i == NameId );
     }
@@ -535,7 +535,7 @@ Wlc_Ntk_t * Wlc_ReadNdr( char * pFileName )
     void * pData = Ndr_Read( pFileName );
     Wlc_Ntk_t * pNtk = Wlc_NtkFromNdr( pData );
     //char * ppNames[10] = { NULL, "a", "b", "c", "d", "e", "f", "g", "h", "i" };
-    //Ndr_WriteVerilog( NULL, pData, ppNames );
+    //Ndr_WriteVerilog( NULL, pData, ppNames, 0 );
     //Ndr_Delete( pData );
     Abc_FrameInputNdr( Abc_FrameGetGlobalFrame(), pData );
     return pNtk;

@@ -466,7 +466,16 @@ Gia_Man_t * Gia_ManDupOrderDfsChoices( Gia_Man_t * p )
   SeeAlso     []
 
 ***********************************************************************/
-Gia_Man_t * Gia_ManDupOrderDfsReverse( Gia_Man_t * p )
+int Gia_ManDupOrderDfs2_rec( Gia_Man_t * pNew, Gia_Man_t * p, Gia_Obj_t * pObj )
+{
+    if ( ~pObj->Value )
+        return pObj->Value;
+    assert( Gia_ObjIsAnd(pObj) );
+    Gia_ManDupOrderDfs2_rec( pNew, p, Gia_ObjFanin1(pObj) );
+    Gia_ManDupOrderDfs2_rec( pNew, p, Gia_ObjFanin0(pObj) );
+    return pObj->Value = Gia_ManAppendAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
+} 
+Gia_Man_t * Gia_ManDupOrderDfsReverse( Gia_Man_t * p, int fRevFans, int fRevOuts )
 {
     Gia_Man_t * pNew;
     Gia_Obj_t * pObj;
@@ -476,12 +485,28 @@ Gia_Man_t * Gia_ManDupOrderDfsReverse( Gia_Man_t * p )
     pNew->pName = Abc_UtilStrsav( p->pName );
     pNew->pSpec = Abc_UtilStrsav( p->pSpec );
     Gia_ManConst0(p)->Value = 0;
-    Gia_ManForEachCoReverse( p, pObj, i )
-        Gia_ManDupOrderDfs_rec( pNew, p, pObj );
     Gia_ManForEachCi( p, pObj, i )
-        if ( !~pObj->Value )
-            pObj->Value = Gia_ManAppendCi(pNew);
-    assert( Gia_ManCiNum(pNew) == Gia_ManCiNum(p) );
+        pObj->Value = Gia_ManAppendCi(pNew);
+    if ( fRevOuts )
+    {
+        if ( fRevFans )
+            Gia_ManForEachCoReverse( p, pObj, i )
+                Gia_ManDupOrderDfs2_rec( pNew, p, Gia_ObjFanin0(pObj) );
+        else
+            Gia_ManForEachCoReverse( p, pObj, i )
+                Gia_ManDupOrderDfs_rec( pNew, p, Gia_ObjFanin0(pObj) );
+    }
+    else
+    {
+        if ( fRevFans )
+            Gia_ManForEachCo( p, pObj, i )
+                Gia_ManDupOrderDfs2_rec( pNew, p, Gia_ObjFanin0(pObj) );
+        else
+            Gia_ManForEachCo( p, pObj, i )
+                Gia_ManDupOrderDfs_rec( pNew, p, Gia_ObjFanin0(pObj) );
+    }
+    Gia_ManForEachCo( p, pObj, i )
+        pObj->Value = Gia_ManAppendCo( pNew, Gia_ObjFanin0Copy(pObj) );
     Gia_ManDupRemapCis( pNew, p );
     Gia_ManDupRemapCos( pNew, p );
     Gia_ManDupRemapEquiv( pNew, p );
@@ -1585,6 +1610,52 @@ Gia_Man_t * Gia_ManDupDfsOnePo( Gia_Man_t * p, int iPo )
 
 /**Function*************************************************************
 
+  Synopsis    [Duplicates the AIG in the DFS order.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Gia_ManDupDfsRehash_rec( Gia_Man_t * pNew, Gia_Man_t * p, Gia_Obj_t * pObj )
+{
+    if ( ~pObj->Value )
+        return;
+    assert( Gia_ObjIsAnd(pObj) );
+    Gia_ManDupDfsRehash_rec( pNew, p, Gia_ObjFanin0(pObj) );
+    Gia_ManDupDfsRehash_rec( pNew, p, Gia_ObjFanin1(pObj) );
+    pObj->Value = Gia_ManHashAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
+}
+Gia_Man_t * Gia_ManDupDfsRehash( Gia_Man_t * p )
+{
+    Gia_Man_t * pNew, * pTemp;
+    Gia_Obj_t * pObj;
+    int i;
+    pNew = Gia_ManStart( Gia_ManObjNum(p) );
+    pNew->pName = Abc_UtilStrsav( p->pName );
+    pNew->pSpec = Abc_UtilStrsav( p->pSpec );
+    Gia_ManFillValue( p );
+    Gia_ManConst0(p)->Value = 0;
+    Gia_ManForEachCi( p, pObj, i )
+        pObj->Value = Gia_ManAppendCi(pNew);
+    Gia_ManHashAlloc( pNew );
+    Gia_ManForEachCo( p, pObj, i )
+        Gia_ManDupDfsRehash_rec( pNew, p, Gia_ObjFanin0(pObj) );
+    Gia_ManForEachCo( p, pObj, i )
+        pObj->Value = Gia_ManAppendCo( pNew, Gia_ObjFanin0Copy(pObj) );
+    pNew = Gia_ManCleanup( pTemp = pNew );
+    Gia_ManStop( pTemp );
+    Gia_ManSetRegNum( pNew, Gia_ManRegNum(p) );
+    pNew->nConstrs = p->nConstrs;
+    if ( p->pCexSeq )
+        pNew->pCexSeq = Abc_CexDup( p->pCexSeq, Gia_ManRegNum(p) );
+    return pNew;
+}
+
+/**Function*************************************************************
+
   Synopsis    [Cofactors w.r.t. a primary input variable.]
 
   Description []
@@ -2295,6 +2366,31 @@ Gia_Man_t * Gia_ManDupTrimmed2( Gia_Man_t * p )
     assert( !Gia_ManHasDangling( pNew ) );
     return pNew;
 }
+Gia_Man_t * Gia_ManDupTrimmed3( Gia_Man_t * p )
+{
+    Vec_Int_t * vMap = Vec_IntStartFull( Gia_ManObjNum(p) );
+    Gia_Man_t * pNew;
+    Gia_Obj_t * pObj;
+    int i;
+    pNew = Gia_ManStart( Gia_ManObjNum(p) );
+    pNew->pName = Abc_UtilStrsav( p->pName );
+    pNew->pSpec = Abc_UtilStrsav( p->pSpec );
+    Gia_ManFillValue( p );
+    Gia_ManConst0(p)->Value = 0;
+    Gia_ManForEachCi( p, pObj, i )
+        pObj->Value = Gia_ManAppendCi(pNew);
+    Gia_ManForEachAnd( p, pObj, i )
+        pObj->Value = Gia_ManAppendAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
+    // mark duplicated POs
+    Gia_ManForEachPo( p, pObj, i )
+        Vec_IntWriteEntry( vMap, Gia_ObjFaninId0p(p, pObj), i );
+    Gia_ManForEachPo( p, pObj, i )
+        if ( Vec_IntEntry(vMap, Gia_ObjFaninId0p(p, pObj)) == i )
+            Gia_ManAppendCo( pNew, Gia_ObjFanin0Copy(pObj) );
+    Vec_IntFree( vMap );
+    Gia_ManSetRegNum( pNew, Gia_ManRegNum(p) );
+    return pNew;
+}
 
 /**Function*************************************************************
 
@@ -2916,6 +3012,44 @@ Vec_Ptr_t * Gia_ManMiterNames( Vec_Ptr_t * p, int nOuts )
 
 /**Function*************************************************************
 
+  Synopsis    [Pair-wise miter.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Gia_Man_t * Gia_ManPairWiseMiter( Gia_Man_t * p )
+{
+    Gia_Man_t * pNew, * pTemp;
+    Gia_Obj_t * pObj, * pObj2;
+    int i, k, iLit;
+    pNew = Gia_ManStart( Gia_ManObjNum(p) );
+    pNew->pName = Abc_UtilStrsav( p->pName );
+    pNew->pSpec = Abc_UtilStrsav( p->pSpec );
+    Gia_ManConst0(p)->Value = 0;
+    Gia_ManHashAlloc( pNew );
+    Gia_ManForEachCi( p, pObj, i )
+        pObj->Value = Gia_ManAppendCi( pNew );
+    Gia_ManForEachAnd( p, pObj, i )
+        pObj->Value = Gia_ManHashAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
+    Gia_ManForEachPo( p, pObj, i )
+    Gia_ManForEachPo( p, pObj2, k )
+    {
+        if ( i >= k )
+            continue;
+        iLit = Gia_ManHashAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin0Copy(pObj2) );
+        Gia_ManAppendCo( pNew, iLit );
+    }
+    pNew = Gia_ManCleanup( pTemp = pNew );
+    Gia_ManStop( pTemp );
+    return pNew;
+}
+
+/**Function*************************************************************
+
   Synopsis    [Transforms the circuit into a regular miter.]
 
   Description []
@@ -3460,6 +3594,8 @@ Gia_Man_t * Gia_ManDupCones( Gia_Man_t * p, int * pPos, int nPos, int fTrimPis )
     // create PIs
     if ( fTrimPis )
     {
+        Gia_ManForEachPi( p, pObj, i )
+            pObj->Value = ~0;
         Vec_PtrForEachEntry( Gia_Obj_t *, vLeaves, pObj, i )
             pObj->Value = Gia_ManAppendCi( pNew );
     }
@@ -4896,6 +5032,38 @@ Gia_Man_t * Gia_ManDupReplaceCut( Gia_Man_t * p )
         Gia_ManDupOrderDfs_rec( pNew, p, pObj );
     Gia_ManSetRegNum( pNew, Gia_ManRegNum(p) );
     Gia_ManCleanMark0( p );
+    return pNew;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Duplicate AIG by creating a cut between logic fed by PIs]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Gia_Man_t * Gia_ManDupAddPis( Gia_Man_t * p, int nMulti )
+{
+    Gia_Man_t * pNew;  int i, k;
+    Gia_Obj_t * pObj;
+    pNew = Gia_ManStart( Gia_ManObjNum(p) + Gia_ManCiNum(p) * nMulti );
+    pNew->pName = Abc_UtilStrsav( p->pName );
+    Gia_ManConst0(p)->Value = 0;
+    Gia_ManForEachCi( p, pObj, i )
+    {
+        pObj->Value = Gia_ManAppendCi(pNew);
+        for ( k = 1; k < nMulti; k++ )
+            Gia_ManAppendCi(pNew);
+    }
+    Gia_ManForEachAnd( p, pObj, i )
+        pObj->Value = Gia_ManAppendAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
+    Gia_ManForEachCo( p, pObj, i )
+        pObj->Value = Gia_ManAppendCo( pNew, Gia_ObjFanin0Copy(pObj) );
+    assert( Gia_ManCiNum(pNew) == nMulti * Gia_ManCiNum(p) );
     return pNew;
 }
 

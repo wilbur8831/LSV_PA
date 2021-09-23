@@ -275,6 +275,13 @@ static inline void Vec_WecClear( Vec_Wec_t * p )
         Vec_IntClear( vVec );
     p->nSize = 0;
 }
+static inline void Vec_WecClearLevels( Vec_Wec_t * p )
+{
+    Vec_Int_t * vVec;
+    int i;
+    Vec_WecForEachLevel( p, vVec, i )
+        Vec_IntClear( vVec );
+}
 
 /**Function*************************************************************
 
@@ -422,7 +429,7 @@ static inline Vec_Wec_t * Vec_WecDup( Vec_Wec_t * p )
     Vec_Wec_t * vNew;
     Vec_Int_t * vVec;
     int i, k, Entry;
-    vNew = Vec_WecAlloc( Vec_WecSize(p) );
+    vNew = Vec_WecStart( Vec_WecSize(p) );
     Vec_WecForEachLevel( p, vVec, i )
         Vec_IntForEachEntry( vVec, Entry, k )
             Vec_WecPush( vNew, i, Entry );
@@ -552,6 +559,29 @@ static inline void Vec_WecSortByLastInt( Vec_Wec_t * p, int fReverse )
   SeeAlso     []
 
 ***********************************************************************/
+static inline void Vec_WecKeepLevels( Vec_Wec_t * p, int Limit )
+{
+    Vec_Int_t * vLevel; int i, k = 0;
+    Vec_WecForEachLevel( p, vLevel, i )
+        if ( Vec_IntSize(vLevel) > Limit )
+        {
+            ABC_SWAP( Vec_Int_t, Vec_WecArray(p)[i], Vec_WecArray(p)[k] );
+            k++;
+        }
+    Vec_WecShrink( p, k );
+}
+
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+  
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
 static inline void Vec_WecPrint( Vec_Wec_t * p, int fSkipSingles )
 {
     Vec_Int_t * vVec;
@@ -624,6 +654,25 @@ static inline int Vec_WecCountNonTrivial( Vec_Wec_t * p, int * pnUsed )
         (*pnUsed) += Vec_IntSize(vClass);
     }
     return nClasses;
+}
+
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+static inline int Vec_WecMaxLevelSize( Vec_Wec_t * p )
+{
+    Vec_Int_t * vTemp; int i, Res = 0;
+    Vec_WecForEachLevel( p, vTemp, i )
+        Res = Abc_MaxInt( Res, Vec_IntSize(vTemp) );
+    return Res;
 }
 
 /**Function*************************************************************

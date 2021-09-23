@@ -1651,7 +1651,7 @@ Gia_Obj_t * Cec4_ManFindRepr( Gia_Man_t * p, Cec4_Man_t * pMan, int iObj )
     pMan->timeResimLoc += Abc_Clock() - clk;
     return NULL;
 }
-int Cec4_ManPerformSweeping( Gia_Man_t * p, Cec_ParFra_t * pPars, Gia_Man_t ** ppNew )
+int Cec4_ManPerformSweeping( Gia_Man_t * p, Cec_ParFra_t * pPars, Gia_Man_t ** ppNew, int fSimOnly )
 {
     Cec4_Man_t * pMan = Cec4_ManCreate( p, pPars ); 
     Gia_Obj_t * pObj, * pRepr; 
@@ -1699,6 +1699,8 @@ int Cec4_ManPerformSweeping( Gia_Man_t * p, Cec_ParFra_t * pPars, Gia_Man_t ** p
         if ( i && i % (pPars->nRounds / 5) == 0 && pPars->fVerbose )
             Cec4_ManPrintStats( p, pPars, pMan, 1 );
     }
+    if ( fSimOnly )
+        goto finalize;
 
     // perform additional simulation
     Cec4_ManCandIterStart( pMan );
@@ -1789,16 +1791,17 @@ finalize:
 Gia_Man_t * Cec4_ManSimulateTest( Gia_Man_t * p, Cec_ParFra_t * pPars )
 {
     Gia_Man_t * pNew = NULL;
-    Cec4_ManPerformSweeping( p, pPars, &pNew );
+    Cec4_ManPerformSweeping( p, pPars, &pNew, 0 );
     return pNew;
 }
-void Cec4_ManSimulateTest2( Gia_Man_t * p, int fVerbose )
+void Cec4_ManSimulateTest2( Gia_Man_t * p, int nConfs, int fVerbose )
 {
     abctime clk = Abc_Clock();
     Cec_ParFra_t ParsFra, * pPars = &ParsFra;
     Cec4_ManSetParams( pPars );
-    Cec4_ManPerformSweeping( p, pPars, NULL );
+    Cec4_ManPerformSweeping( p, pPars, NULL, 0 );
     pPars->fVerbose = fVerbose;
+    pPars->nBTLimit = nConfs;
     if ( fVerbose )
         Abc_PrintTime( 1, "New choice computation time", Abc_Clock() - clk );
 }
@@ -1809,8 +1812,15 @@ Gia_Man_t * Cec4_ManSimulateTest3( Gia_Man_t * p, int nBTLimit, int fVerbose )
     Cec4_ManSetParams( pPars );
     pPars->fVerbose = fVerbose;
     pPars->nBTLimit = nBTLimit;
-    Cec4_ManPerformSweeping( p, pPars, &pNew );
+    Cec4_ManPerformSweeping( p, pPars, &pNew, 0 );
     return pNew;
+}
+int Cec4_ManSimulateOnlyTest( Gia_Man_t * p, int fVerbose )
+{
+    Cec_ParFra_t ParsFra, * pPars = &ParsFra;
+    Cec4_ManSetParams( pPars );
+    pPars->fVerbose = fVerbose;
+    return Cec4_ManPerformSweeping( p, pPars, NULL, 1 );
 }
 
 ////////////////////////////////////////////////////////////////////////

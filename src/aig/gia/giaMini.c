@@ -32,6 +32,8 @@ ABC_NAMESPACE_IMPL_START
 ///                        DECLARATIONS                              ///
 ////////////////////////////////////////////////////////////////////////
 
+extern int Kit_TruthToGia( Gia_Man_t * pMan, unsigned * pTruth, int nVars, Vec_Int_t * vMemory, Vec_Int_t * vLeaves, int fHash );
+
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
 ////////////////////////////////////////////////////////////////////////
@@ -57,7 +59,7 @@ int Gia_ObjFromMiniFanin1Copy( Gia_Man_t * pGia, Vec_Int_t * vCopies, Mini_Aig_t
     int Lit = Mini_AigNodeFanin1( p, Id );
     return Abc_LitNotCond( Vec_IntEntry(vCopies, Abc_Lit2Var(Lit)), Abc_LitIsCompl(Lit) );
 }
-Gia_Man_t * Gia_ManFromMiniAig( Mini_Aig_t * p, Vec_Int_t ** pvCopies )
+Gia_Man_t * Gia_ManFromMiniAig( Mini_Aig_t * p, Vec_Int_t ** pvCopies, int fGiaSimple )
 {
     Gia_Man_t * pGia, * pTemp;
     Vec_Int_t * vCopies;
@@ -71,7 +73,10 @@ Gia_Man_t * Gia_ManFromMiniAig( Mini_Aig_t * p, Vec_Int_t ** pvCopies )
     vCopies = Vec_IntAlloc( nNodes );
     Vec_IntPush( vCopies, 0 );
     // iterate through the objects
-    Gia_ManHashAlloc( pGia );
+    if ( fGiaSimple )
+        pGia->fGiaSimple = fGiaSimple;
+    else
+        Gia_ManHashAlloc( pGia );
     for ( i = 1; i < nNodes; i++ )
     {
         if ( Mini_AigNodeIsPi( p, i ) )
@@ -83,17 +88,19 @@ Gia_Man_t * Gia_ManFromMiniAig( Mini_Aig_t * p, Vec_Int_t ** pvCopies )
         else assert( 0 );
         Vec_IntPush( vCopies, iGiaLit );
     }
-    Gia_ManHashStop( pGia );
     assert( Vec_IntSize(vCopies) == nNodes );
     if ( pvCopies )
         *pvCopies = vCopies;
     else
         Vec_IntFree( vCopies );
     Gia_ManSetRegNum( pGia, Mini_AigRegNum(p) );
-    pGia = Gia_ManCleanup( pTemp = pGia );
-    if ( pvCopies )
-        Gia_ManDupRemapLiterals( *pvCopies, pTemp );
-    Gia_ManStop( pTemp );
+    if ( !fGiaSimple )
+    {
+        pGia = Gia_ManCleanup( pTemp = pGia );
+        if ( pvCopies )
+            Gia_ManDupRemapLiterals( *pvCopies, pTemp );
+        Gia_ManStop( pTemp );
+    }
     return pGia;
 }
 
@@ -148,7 +155,7 @@ void Abc_FrameGiaInputMiniAig( Abc_Frame_t * pAbc, void * p )
         printf( "ABC framework is not initialized by calling Abc_Start()\n" );
     Gia_ManStopP( &pAbc->pGiaMiniAig );
     Vec_IntFreeP( &pAbc->vCopyMiniAig );
-    pGia = Gia_ManFromMiniAig( (Mini_Aig_t *)p, &pAbc->vCopyMiniAig );
+    pGia = Gia_ManFromMiniAig( (Mini_Aig_t *)p, &pAbc->vCopyMiniAig, 0 );
     Abc_FrameUpdateGia( pAbc, pGia );
     pAbc->pGiaMiniAig = Gia_ManDup( pGia );
 //    Gia_ManDelete( pGia );
@@ -175,10 +182,10 @@ void * Abc_FrameGiaOutputMiniAig( Abc_Frame_t * pAbc )
   SeeAlso     []
 
 ***********************************************************************/
-Gia_Man_t * Gia_ManReadMiniAig( char * pFileName )
+Gia_Man_t * Gia_ManReadMiniAig( char * pFileName, int fGiaSimple )
 {
     Mini_Aig_t * p = Mini_AigLoad( pFileName );
-    Gia_Man_t * pGia = Gia_ManFromMiniAig( p, NULL );
+    Gia_Man_t * pGia = Gia_ManFromMiniAig( p, NULL, fGiaSimple );
     ABC_FREE( pGia->pName );
     pGia->pName = Extra_FileNameGeneric( pFileName ); 
     Mini_AigStop( p );
@@ -259,6 +266,65 @@ Gia_Man_t * Gia_ManFromMiniLut( Mini_Lut_t * p, Vec_Int_t ** pvCopies )
     Gia_ManStop( pTemp );
     return pGia;
 }
+
+
+/**Function*************************************************************
+
+  Synopsis    [Converts MiniLUT into GIA.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Gia_Man_t * Gia_ManFromMiniLut2( Mini_Lut_t * p, Vec_Int_t ** pvCopies )
+{
+    Gia_Man_t * pGia;
+    Vec_Int_t * vCopies;
+    Vec_Int_t * vCover = Vec_IntAlloc( 1000 );
+    Vec_Int_t * vLits = Vec_IntAlloc( 100 );
+    int i, k, Fan, iGiaLit, nNodes;
+    // get the number of nodes
+    nNodes = Mini_LutNodeNum(p);
+    // create ABC network
+    pGia = Gia_ManStart( 3 * nNodes );
+    pGia->pName = Abc_UtilStrsav( "MiniLut" );
+    // create mapping from MiniLUT objects into ABC objects
+    vCopies = Vec_IntAlloc( nNodes );
+    Vec_IntPush( vCopies, 0 );
+    Vec_IntPush( vCopies, 1 );
+    // iterate through the objects
+    pGia->fGiaSimple = 1;
+    for ( i = 2; i < nNodes; i++ )
+    {
+        if ( Mini_LutNodeIsPi( p, i ) )
+            iGiaLit = Gia_ManAppendCi(pGia);
+        else if ( Mini_LutNodeIsPo( p, i ) )
+            iGiaLit = Gia_ManAppendCo(pGia, Vec_IntEntry(vCopies, Mini_LutNodeFanin(p, i, 0)));
+        else if ( Mini_LutNodeIsNode( p, i ) )
+        {
+            unsigned * puTruth = Mini_LutNodeTruth( p, i );
+            Vec_IntClear( vLits );
+            Mini_LutForEachFanin( p, i, Fan, k )
+                Vec_IntPush( vLits, Vec_IntEntry(vCopies, Fan) );
+            iGiaLit = Kit_TruthToGia( pGia, puTruth, Vec_IntSize(vLits), vCover, vLits, 0 );
+        }
+        else assert( 0 );
+        Vec_IntPush( vCopies, iGiaLit );
+    }
+    Vec_IntFree( vCover );
+    Vec_IntFree( vLits );
+    assert( Vec_IntSize(vCopies) == nNodes );
+    if ( pvCopies )
+        *pvCopies = vCopies;
+    else
+        Vec_IntFree( vCopies );
+    Gia_ManSetRegNum( pGia, Mini_LutRegNum(p) );
+    return pGia;
+}
+
 
 /**Function*************************************************************
 
@@ -411,6 +477,15 @@ void Abc_FrameGiaInputMiniLut( Abc_Frame_t * pAbc, void * p )
     pGia = Gia_ManFromMiniLut( (Mini_Lut_t *)p, NULL );
     Abc_FrameUpdateGia( pAbc, pGia );
 //    Gia_ManDelete( pGia );
+}
+void Abc_FrameGiaInputMiniLut2( Abc_Frame_t * pAbc, void * p )
+{
+    if ( pAbc == NULL )
+        printf( "ABC framework is not initialized by calling Abc_Start()\n" );
+    Vec_IntFreeP( &pAbc->vCopyMiniLut );
+    Gia_ManStopP( &pAbc->pGiaMiniLut );
+    pAbc->pGiaMiniLut = Gia_ManFromMiniLut2( (Mini_Lut_t *)p, &pAbc->vCopyMiniLut );
+//    Abc_FrameUpdateGia( pAbc, pGia );
 }
 void * Abc_FrameGiaOutputMiniLut( Abc_Frame_t * pAbc )
 {
@@ -587,6 +662,23 @@ int * Abc_FrameReadMiniLutNameMapping( Abc_Frame_t * pAbc )
     pRes = Gia_ManMapMiniLut2MiniAig( pGia, pAbc->pGiaMiniAig, pAbc->pGiaMiniLut, pAbc->vCopyMiniAig, pAbc->vCopyMiniLut );
     //Gia_ManNameMapVerify( pGia, pAbc->pGiaMiniAig, pAbc->pGiaMiniLut, pAbc->vCopyMiniAig, pAbc->vCopyMiniLut, pRes );
     Gia_ManStop( pGia );
+    return pRes;
+}
+int * Abc_FrameReadMiniLutSwitching( Abc_Frame_t * pAbc )
+{
+    Vec_Int_t * vSwitching;
+    int i, iObj, * pRes = NULL;
+    if ( pAbc->pGiaMiniLut == NULL )
+    {
+        printf( "GIA derived from MiniLut is not available.\n" );
+        return NULL;
+    }
+    vSwitching = Gia_ManComputeSwitchProbs( pAbc->pGiaMiniLut, 48, 16, 0 );
+    pRes = ABC_CALLOC( int, Vec_IntSize(pAbc->vCopyMiniLut) );
+    Vec_IntForEachEntry( pAbc->vCopyMiniLut, iObj, i )
+        if ( iObj >= 0 )
+            pRes[i] = (int)(10000*Vec_FltEntry( (Vec_Flt_t *)vSwitching, Abc_Lit2Var(iObj) ));
+    Vec_IntFree( vSwitching );
     return pRes;
 }
 
