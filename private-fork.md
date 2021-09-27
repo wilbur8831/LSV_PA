@@ -36,7 +36,7 @@ upstream	git@github.com:NTU-ALComLab/LSV-PA.git (fetch)
 upstream	git@github.com:NTU-ALComLab/LSV-PA.git (push)
 ```
 
-Now you can update your private repository by `git fetch upstream`.
+Now you can update your private repository by `git fetch upstream` and `git merge upstream/master`.
 Note that you don't have the permission to push to this repository.
 You can disable it by `git remote set-url --push upstream DISABLE`.
 
@@ -56,9 +56,11 @@ Second, pull the code from the master branch of your private repository to the b
 ~/LSV-PA-public-fork$ git pull private master
 ```
 
-Third, push your code to the public fork and send a pull request to this repository via GitHub UI.
+Third, push your code to the public fork. 
 ```
-~/LSV-PA-public-fork$ git push --set-upstream origin <your-student-id>
+~/LSV-PA-public-fork$ git push --set-upstream origin <branch> 
 ```
+For PA0, `<branch>` is `master`, for PA1 and PA2, `<branch>` is `<your-student-id>`.
 
+Fourth, send a pull request to this repository via GitHub UI.
 To repeat the process, you only need `git pull private master` and `git push`.
