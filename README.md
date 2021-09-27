@@ -1,4 +1,4 @@
-# LSV-PA
+# LSV-PA, Fall 2021
 This is a repository to host programming assignments of the course **Logic Synthesis and Verification** at National Taiwan University.
 It is forked from the repository [ABC](https://github.com/berkeley-abc/abc) of UC Berkeley.
 
@@ -30,21 +30,21 @@ The detailed steps are documented [here](./private-fork.md).
 ### PA0
 Topic: Getting familiar with git and GitHub
 
-Task: Fill in your GitHub Account in this [table](./lsv/admin/participants-id.csv) via a pull request to the **master** branch.
+Task: Fill in your GitHub Account in this [table](./lsv_fall_2021/admin/participants-id.csv) via a pull request to the **master** branch.
 
-Deadline: 2020.09.30
+Deadline: 2021/10/04 
 
-### [PA1](./lsv/pa1/README.md)
-Topic: Unateness checking of SOP for a node
+### [PA1](./lsv_fall_2021/pa1/README.md)
+Topic: Finding maximum single-fanout cones (MSFCs)
 
 Submission period:
-- Parts 1 and 2: 2020/10/15 11:00-13:00
-- Part 3: 2020/10/29 11:00-13:00
+- Parts 1 and 2: 2021/10/08 11:00-13:00 
+- Part 3: 2021/10/22 11:00-13:00 
 
-### [PA2](./lsv/pa2/README.md)
-Topic: Unateness checking of global PI/PO
+### PA2
+Topic: TBD  
 
-Submission period: 2020/12/10 11:00-13:00
+Submission period: TBD 
 
 #### Evaluation
 For PA1 and PA2, your submissions will be evaluated over [The EPFL Combinational Benchmark Suite](https://www.epfl.ch/labs/lsi/page-102566-en-html/benchmarks/).
@@ -57,10 +57,10 @@ You can clone the benchmarks from this [repository](https://github.com/lsils/ben
 ```
 
 ## Participants
-We recommend students to register their student IDs and GitHub accounts in this [table](./lsv/admin/participants-id.csv).
+We recommend students to register their student IDs and GitHub accounts in this [table](./lsv_fall_2021/admin/participants-id.csv).
 
 ## Contact
-TA: Nian-Ze Lee (d04943019@ntu.edu.tw)
+TA: Yun-Rong Luo (r10943108@ntu.edu.tw)
 
 For questions, you are encouraged to open an [issue](https://github.com/NTU-ALComLab/LSV-PA/issues).
 As other students might have the same questions, discussing in an issue will benefit everyone.
