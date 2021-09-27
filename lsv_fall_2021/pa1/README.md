@@ -1,8 +1,13 @@
 ## Programming Assignment 1
 
-### Submission
-- Parts 1 and 2: 2021/10/08 23:59  (by online submission on CEIBA) 
-- Part 3: 2021/10/22 23:59 (by online submission on CEIBA)
+### Submission Guidelines
+Please send a pull request to the branch named with your student ID during the submission periods (see below).  
+For Parts 1 and 2, please put the required items under `lsv_fall_2021/pa1`, i.e., this folder.  
+For Part 3, please develop your code under `src/ext-lsv`.
+
+#### Submission Periods
+- Parts 1 and 2: 2021/10/08 11:00-13:00  
+- Part 3: 2021/10/22 11:00-13:00 
 
 ### 1. [Using ABC]
 (10%)  
@@ -34,12 +39,28 @@ collapsed BDD (by command `collapse`)
     - results of `show` and `show_bdd -g` after step 3,5,7 in Part 1
     - answers of question (a),(b) in Part 2. 
 
-Put the files into a folder named <your student ID> (e.g. r10943108), and compress it into <your student ID>.tgz by
-```
-tar -czvf <your student ID>.tgz <your student ID>
-```
-Submit the tgz through CEIBA.
-
 ### 3. [Programming ABC]
 (80%)  
-To be announced.
+Write a procedure in ABC that find maximum single-fanout cones (MSFCs) that covers all nodes (excluding PIs and POs) of a given AIG. 
+Integrate this procedure into ABC, so that after reading in a circuit by the command `read`, running the command `lsv_print_msfc` would invoke your code.
+ 
+The maximum single-fanout cone (MSFC) (c.f. [maximum fanout free cone (MFFC)] (https://ieeexplore.ieee.org/document/1600459)
+of node `$v$`, denoted `$C(v)$`, is the maximum set of nodes such that `$u \in C(v)$` if and only if 1) `$u = v$`, or 2) `$|FO(u)| = 1$` and `$FO(u) \subseteq C(v)$`.
+
+For example, given an AIG in the following figure, 
+![an AIG.](./image/aig.png)
+
+we have the following decomposition:
+```
+MSFC 0: n8,n9,n10
+MSFC 1: n11
+MSFC 2: n12
+MSFC 3: n13,n14,n15,n17,n18,n19,n20
+MSFC 4: n16
+MSFC 5: n21,n22,n23,n24
+```
+
+In each line of `MSFC i:`, print the names of nodes returned by function `Abc ObjName()`, and sort the nodes in an increasing order with respect to their object IDs returned by function `Abc ObjId()`. 
+Lines of MSFCs are printed in an increasing order with respect to the smallest object ID of each MSFC. 
+Make sure that only internal nodes (non-PI and non-PO nodes) are printed, and each node is printed only once.
+
