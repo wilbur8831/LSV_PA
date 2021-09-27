@@ -45,7 +45,7 @@ Write a procedure in ABC that find maximum single-fanout cones (MSFCs) that cove
 Integrate this procedure into ABC, so that after reading in a circuit by the command `read`, running the command `lsv_print_msfc` would invoke your code.
  
 The maximum single-fanout cone (MSFC) (c.f. [maximum fanout free cone (MFFC)] (https://ieeexplore.ieee.org/document/1600459)
-of node `$v$`, denoted `$C(v)$`, is the maximum set of nodes such that `$u \in C(v)$` if and only if 1) `$u = v$`, or 2) `$|FO(u)| = 1$` and `$FO(u) \subseteq C(v)$`.
+of node `v`, denoted `C(v)`, is the maximum set of nodes such that `u ∈ C(v)` if and only if 1) `u = v`, or 2) `|FO(u)| = 1` and `FO(u) ⊆ C(v)`.
 
 For example, given an AIG in the following figure, 
 ![an AIG.](./image/aig.png)
