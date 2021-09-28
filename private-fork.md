@@ -61,6 +61,6 @@ Third, push your code to the public fork.
 ~/LSV-PA-public-fork$ git push --set-upstream origin <your-student-id> 
 ```
 
-Fourth, send a pull request to <branch> of this repository via GitHub UI.
+Fourth, send a pull request to `<branch>` of this repository via GitHub UI.
 For PA0, `<branch>` is `master`, for PA1 and PA2, `<branch>` is `<your-student-id>`.
 To repeat the process, you only need `git pull private master` and `git push`.
