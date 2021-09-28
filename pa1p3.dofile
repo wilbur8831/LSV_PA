@@ -1,0 +1,3 @@
+read aig.v
+strash
+lsv_print_msfc
