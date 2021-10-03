@@ -1,0 +1,25 @@
+.model SA4
+.inputs A B C D
+.outputs S
+.subckt FA1 a=A b=B ci=CI1 s=S1 co=CO1
+.subckt FA1 a=C b=D ci=CI2 s=S2 co=CO2
+.subckt FA1 a=S1 b=S2 ci=CI3 s=S co=CO3
+.latch CO1 CI1 0
+.latch CO2 CI2 0
+.latch CO3 CI3 0
+.end
+
+.model FA1
+.inputs a b ci
+.outputs s co
+.names a b ci s
+111 1
+100 1
+010 1
+001 1
+.names a b ci co
+11- 1
+1-1 1
+-11 1
+.end
+
