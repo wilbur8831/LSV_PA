@@ -1,0 +1,44 @@
+.model HW_1
+.inputs A B C D
+.outputs S
+.subckt ultimate_adder a=A b=B c=C d=D cin1=CIN1 cin2=CIN2 s=S cout1=COUT1 cout2=COUT2
+.subckt register in=COUT1 out=CIN1
+.subckt register in=COUT2 out=COUT2_delay
+.subckt register in=COUT2_delay out=CIN2
+.end
+
+.model ultimate_adder
+.inputs a b c d cin1 cin2
+.outputs s cout1 cout2
+.subckt full_adder a=a b=b c-in=cin1 sum=s_ab c-out=c1_ab
+.subckt full_adder a=c b=d c-in=cin2 sum=s_cd c-out=c1_cd
+.subckt full_adder a=s_ab b=s_cd c-in=zero sum=s c-out=c1_ss
+.subckt full_adder a=c1_ab b=c1_cd c-in=c1_ss sum=cout1 c-out=cout2
+.names zero
+0
+.end
+
+.model full_adder
+.inputs a b c-in
+.outputs sum c-out
+.names a b c-in sum #sum=XOR(a,b,c-in)
+100 1
+010 1
+001 1
+111 1
+.names a b c-in c-out #c-out=MAJ(a,b,c-in)
+11- 1
+1-1 1
+-11 1
+.end
+
+
+.model register
+.inputs in # a very simple sequential circuit
+.outputs out
+.latch in out 0
+.end
+
+
+
+
