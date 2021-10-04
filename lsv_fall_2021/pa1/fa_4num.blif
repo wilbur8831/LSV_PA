@@ -2,8 +2,8 @@
 .inputs a b c d ci1 ci2
 .outputs s co1 co2
 # latches
-#.latch co1 ci1 0
-#.latch co2 ci2 0
+.latch co1 ci1 0
+.latch co2 ci2 0
 # sum = XOR(a, b, c, d, ci1, ci2)
 .names a b c d ci1 ci2 s 
 100000 1
