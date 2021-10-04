@@ -1,0 +1,6 @@
+.inputs in # a very simple sequential circuit
+.outputs out
+.latch out in 0
+.names in out
+0 1
+.end
