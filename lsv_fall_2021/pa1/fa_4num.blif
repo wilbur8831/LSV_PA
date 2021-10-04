@@ -1,6 +1,6 @@
 .model fa_4num
-.inputs a b c d ci1 ci2
-.outputs s co1 co2
+.inputs a b c d
+.outputs s
 # latches
 .latch co1 ci1 0
 .latch co2 ci2 0

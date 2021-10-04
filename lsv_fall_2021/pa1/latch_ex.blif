@@ -1,3 +1,4 @@
+.model latch_ex
 .inputs in # a very simple sequential circuit
 .outputs out
 .latch out in 0
