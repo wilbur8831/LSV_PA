@@ -1,0 +1,25 @@
+.model 4bitadder_s
+.inputs A B C D
+.outputs S
+.latch COUTAB CINAB  0
+.latch COUTCD CINCD  0
+.latch COUTABCD CINABCD  0
+.subckt fulladder a=A b=B cin=CINAB s=SAB cout=COUTAB
+.subckt fulladder a=C b=D cin=CINCD s=SCD cout=COUTCD
+.subckt fulladder a=SAB b=SCD cin=CINABCD s=S cout=COUTABCD
+.end
+
+.model fulladder
+.inputs a b cin
+.outputs s cout
+.names a b k
+10 1
+01 1
+.names k cin s
+10 1
+01 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
