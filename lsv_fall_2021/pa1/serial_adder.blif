@@ -1,0 +1,24 @@
+.model serial_adder
+.inputs a b c d 
+.outputs s
+.subckt full_adder a=a b=b c-in=cin-ab sum=s-ab c-out=cout-ab
+.subckt full_adder a=c b=d c-in=cin-cd sum=s-cd c-out=cout-cd
+.subckt full_adder a=s-ab b=s-cd c-in=cin-abcd sum=s c-out=cout-abcd
+.latch cout-ab cin-ab 0
+.latch cout-cd cin-cd 0
+.latch cout-abcd cin-abcd 0 
+.end
+
+.model full_adder
+.inputs a b c-in
+.outputs sum c-out
+.names a b c-in sum #sum=XOR(a,b,c-in)
+100 1
+010 1
+001 1
+111 1
+.names a b c-in c-out #c-out=MAJ(a,b,c-in)
+11- 1
+1-1 1
+-11 1
+.end
