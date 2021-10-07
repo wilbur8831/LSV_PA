@@ -4915,6 +4915,10 @@ SOURCE=.\src\aig\gia\giaCut.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\aig\gia\giaDecs.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\aig\gia\giaDeep.c
 # End Source File
 # Begin Source File
@@ -5199,6 +5203,10 @@ SOURCE=.\src\aig\gia\giaStg.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\aig\gia\giaStoch.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\aig\gia\giaStr.c
 # End Source File
 # Begin Source File
@@ -5208,6 +5216,10 @@ SOURCE=.\src\aig\gia\giaSupMin.c
 # Begin Source File
 
 SOURCE=.\src\aig\gia\giaSupp.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\aig\gia\giaSupps.c
 # End Source File
 # Begin Source File
 
