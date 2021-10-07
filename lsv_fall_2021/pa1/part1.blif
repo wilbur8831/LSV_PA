@@ -1,0 +1,39 @@
+.model serialadder
+.inputs a b c d
+.outputs S
+.latch cout0 cin0 0
+.latch cout1 cin1_t 0
+.latch cin1_t cin1 0
+.subckt fulladder a=a b=b c=c d=d cin1=cin1 cin0=cin0 S=S cout1=cout1 cout0=cout0
+.end
+
+
+.model fulladder 
+.inputs a b c d cin1 cin0
+.outputs S cout1 cout0
+.subckt 3bitadder a=a b=b c=c out1=o1 out0=o0
+.subckt 3bitadder a=d b=cin0 c=cin1 out1=o2 out0=o3
+.subckt 3bitadder a=o1 b=o2 c=temp out1=cout1 out0=cout0
+.names o0 o3 S
+10 1
+01 1
+.names o0 o3 temp
+11 1
+
+.end
+
+.model 3bitadder
+.inputs a b c
+.outputs out1 out0
+.names a b c out0
+111 1
+100 1
+010 1
+001 1
+.names a b c out1
+111 1
+110 1
+011 1
+101 1
+.end
+
