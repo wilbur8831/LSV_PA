@@ -1,0 +1,53 @@
+# 4-bit serial adder
+
+.model SERIAL_ADDER
+.inputs a b c d
+.outputs s
+.latch i0 o0 0
+.latch i1 o1 0
+
+# 4 bits sum -> tmp2,tmp1,tmp0, at most 100
+.names a b c d tmp0
+0001 1
+0010 1
+0100 1
+1000 1
+1110 1
+1101 1
+1011 1
+0111 1
+.names a b c d tmp1
+0011 1
+0101 1
+0110 1
+1001 1
+1010 1
+1100 1
+1110 1
+1101 1
+1011 1
+0111 1
+.names a b c d tmp2
+1111 1
+
+# tmp sum + latch: tmp[2:0] + o[1:0] = {i1[1:0], s}, at most 111
+.names tmp0 o0 s
+01 1
+10 1
+.names tmp0 o0 c0
+11 1
+.names tmp1 o1 c0 i0
+001 1
+010 1
+100 1
+111 1
+.names tmp1 o1 c0 c1
+011 1
+101 1
+110 1
+111 1
+.names tmp2 c1 i1
+01 1
+10 1
+
+.end
