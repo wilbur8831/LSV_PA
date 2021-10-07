@@ -1,0 +1,39 @@
+
+#4-bit adder
+#Data bits: 4
+
+.model ADDER4
+.inputs a b c d
+.outputs s
+.latch c_1_in c_2_in c_1_out c_2_out 0
+
+
+#C[x] is a temporary variable, used for the carry-out of the addition
+.subckt ADDER a=a b=b cin=c o=s_1 cout=c_1
+.subckt ADDER a=d b=c_1 cin=c_1_in o=s_2 cout=c_1_out
+.subckt ADDER a=s_1 b=s_2 cin=c_2_in o=s cout=c_2_out
+# .search ADDER.blif
+
+.end
+
+#1-bit adder
+#Data bits: 1
+
+.model ADDER
+.inputs a b cin
+.outputs o cout
+
+.names a b k
+10 1
+01 1
+
+.names k cin o
+10 1
+01 1
+
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+
+.end
