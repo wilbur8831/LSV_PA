@@ -1,0 +1,34 @@
+.model adder4s
+
+.inputs A B C D
+.outputs S
+.clock CLK
+
+.latch CO1 CI1 re CLK 0
+.latch CO2 WC re CLK 0
+.latch WC CI2 re CLK 0
+
+.names const0
+
+.subckt fa a=A b=B cin=CI1 s=S1 cout=C1
+.subckt fa a=C b=D cin=CI2 s=S2 cout=C2
+.subckt fa a=S1 b=S2 cin=const0 s=S cout=C3
+.subckt fa a=C1 b=C2 cin=C3 s=CO1 cout=CO2
+
+.end
+
+.model fa
+.inputs a b cin
+.outputs s cout
+
+.names a b w1
+10 1
+01 1
+.names w1 cin s
+10 1
+01 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
