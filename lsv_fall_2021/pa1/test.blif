@@ -1,0 +1,39 @@
+# Benchmark "four_number_serial_adder" written by ABC on Tue Oct  5 15:26:30 2021
+.model four_number_serial_adder
+.inputs a b c d
+.outputs sum
+
+.latch        n19 four_number_serial_adder|cin1  0
+.latch        n22 four_number_serial_adder|cin2  0
+.latch        n25 four_number_serial_adder|cin3  0
+
+.names a b four_number_serial_adder|cin1 new_four_number_serial_adder|s1_
+100 1
+010 1
+001 1
+111 1
+.names a b four_number_serial_adder|cin1 n19
+11- 1
+1-1 1
+-11 1
+.names c d four_number_serial_adder|cin2 new_four_number_serial_adder|s2_
+100 1
+010 1
+001 1
+111 1
+.names c d four_number_serial_adder|cin2 n22
+11- 1
+1-1 1
+-11 1
+.names new_four_number_serial_adder|s1_ new_four_number_serial_adder|s2_ \
+ four_number_serial_adder|cin3 sum
+100 1
+010 1
+001 1
+111 1
+.names new_four_number_serial_adder|s1_ new_four_number_serial_adder|s2_ \
+ four_number_serial_adder|cin3 n25
+11- 1
+1-1 1
+-11 1
+.end
