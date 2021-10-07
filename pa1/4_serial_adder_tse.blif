@@ -1,0 +1,30 @@
+.model 2numberserialadder
+.inputs a b
+.outputs s
+.clock c
+.latch cout cin re c 0
+
+.names a b k
+10 1
+01 1
+
+.names k cin s
+10 1
+01 1
+
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+
+.end
+
+.model 4numberserialadder
+.inputs a b c d
+.outputs s
+.clock c
+.subckt 2numberserialadder a=a b=b s=s1 c=c
+.subckt 2numberserialadder a=c b=d s=s2 c=c
+.subckt 2numberserialadder a=s1 b=s2 s=s c=c
+.end
+
