@@ -58,9 +58,9 @@ Second, pull the code from the master branch of your private repository to the b
 
 Third, push your code to the public fork. 
 ```
-~/LSV-PA-public-fork$ git push --set-upstream origin <branch> 
+~/LSV-PA-public-fork$ git push --set-upstream origin <your-student-id> 
 ```
-For PA0, `<branch>` is `master`, for PA1 and PA2, `<branch>` is `<your-student-id>`.
 
-Fourth, send a pull request to this repository via GitHub UI.
+Fourth, send a pull request to `<branch>` of this repository via GitHub UI.
+For PA0, `<branch>` is `master`, for PA1 and PA2, `<branch>` is `<your-student-id>`.
 To repeat the process, you only need `git pull private master` and `git push`.
