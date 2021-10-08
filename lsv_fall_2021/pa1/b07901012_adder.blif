@@ -1,0 +1,28 @@
+.model serial_4
+.inputs in_1 in_2 in_3 in_4
+.outputs out
+.subckt serial_2 A=in_1 B=in_2 out=temp1
+.subckt serial_2 A=in_3 B=in_4 out=temp2
+.subckt serial_2 A=temp1 B=temp2 out=out
+.end
+
+.model serial_2
+.inputs A B
+.outputs out
+.latch co ci 0
+.subckt FA a=A b=B c_in=ci s=out c_out=co
+.end
+
+.model FA
+.inputs a b c_in
+.outputs s c_out
+.names a b c_in s
+001 1
+010 1
+100 1
+111 1
+.names a b c_in c_out
+-11 1
+1-1 1
+11- 1
+.end
