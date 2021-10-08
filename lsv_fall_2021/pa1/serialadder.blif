@@ -1,0 +1,23 @@
+.model serial_adder
+.inputs a b c d
+.outputs s
+.subckt full_adder a=a b=b c-in=w5 sum=w0 c-out=w1
+.subckt full_adder a=c b=d c-in=w0 sum=s c-out=w2 
+.subckt full_adder a=w1 b=w2 c-in=w6 sum=w3 c-out=w4  
+.latch w3 w5 0
+.latch w4 w6 0
+.end
+
+.model full_adder
+.inputs a b c-in
+.outputs sum c-out
+.names a b c-in sum #sum=XOR(a,b,c-in)
+100 1
+010 1
+001 1
+111 1
+.names a b c-in c-out #c-out=MAJ(a,b,c-in)
+11- 1
+1-1 1
+-11 1
+.end
