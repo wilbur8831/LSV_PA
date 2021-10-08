@@ -1,0 +1,24 @@
+.model 4bitSerialAdder
+.inputs A B C D
+.outputs S
+.subckt fullAdder a=A  b=B  cin=CIN0 s=S0 cout=COUT0
+.subckt fullAdder a=C  b=D  cin=CIN1 s=S1 cout=COUT1
+.subckt fullAdder a=S0 b=S1 cin=CIN2 s=S  cout=COUT2
+.latch COUT0 CIN0 0
+.latch COUT1 CIN1 0
+.latch COUT2 CIN2 0
+.end
+
+.model fullAdder
+.inputs a b cin
+.outputs s cout
+.names a b cin s
+001 1
+010 1
+100 1
+111 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
