@@ -1,0 +1,29 @@
+# 1-bit full-adder
+.model FA
+.inputs a b cin
+.outputs s cout
+.names a b cin s
+100 1
+010 1
+001 1
+111 1
+.names a b cin cout
+-11 1
+1-1 1
+11- 1
+.end
+
+
+#4-bit full-adder
+.model SerialAdder_4n
+.inputs a b c d
+.outputs s
+
+.subckt FA a=a b=b cin=c0 s=s0 cout=c1_out
+.latch c1_out c1_in 0
+.subckt FA a=s0 b=c cin=c1_in s=s1 cout=c2_out
+.latch c2_out c2_in 0
+.subckt FA a=s1 b=d cin=c2_in s=s cout=c3_out
+.latch c3_out c0 0
+
+.end
