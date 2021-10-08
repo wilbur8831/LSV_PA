@@ -1,0 +1,29 @@
+.model 4NSA
+.inputs  a b c d
+.outputs s 
+.subckt 2NSA A=a B=b S=w1 
+.subckt 2NSA A=c B=d S=w2 
+.subckt 2NSA A=w1 B=w2 S=s
+.end
+
+.model 2NSA
+.inputs  A B 
+.outputs S 
+.subckt FA  a=A    b=B   cin=CIN cout=COUT s=S 
+.latch COUT CIN 0
+.end
+
+.model FA 
+.inputs a b cin 
+.outputs s cout 
+.names a b cin cout
+101 1
+011 1
+111 1
+110 1
+.names a b cin s
+100 1
+001 1
+111 1
+010 1
+.end
