@@ -1,0 +1,25 @@
+.model serial_adder
+.inputs a b c d
+.outputs s
+.clock clk
+.subckt fa a=a b=b s=p
+.subckt fa a=c b=d s=q
+.subckt fa a=p b=q s=s
+.end
+
+.model fa
+.inputs a b
+.outputs s
+.clock clk
+.latch co ci 0
+.names a b ci s
+111 1
+100 1
+010 1
+001 1
+.names a b ci co
+011 1
+101 1
+110 1
+111 1
+.end
