@@ -1,0 +1,32 @@
+.model serial_adder
+.inputs  a b c d
+.outputs s 
+.subckt 2_serial_adder a1=a b1=b s1=n1
+.subckt 2_serial_adder a1=c b1=d s1=n2 
+.subckt 2_serial_adder a1=n3 b1=n4 s1=s
+.names n1 n3 
+1 1
+.names n2 n4
+1 1 
+.end
+
+.model 2_serial_adder
+.inputs a1 b1 
+.outputs s1 
+.subckt full_adder  a2=a1    b2=b1   cin=CIN cout=COUT s=s1 
+.latch COUT CIN 0
+.end
+
+.model full_adder 
+.inputs a2 b2 cin 
+.outputs s cout 
+.names a2 b2 cin cout
+11- 1
+1-1 1
+-11 1
+.names a2 b2 cin s
+100 1
+001 1
+111 1
+010 1
+.end
