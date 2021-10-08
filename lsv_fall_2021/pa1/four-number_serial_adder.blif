@@ -1,0 +1,32 @@
+.model 4bitserialadder
+.inputs A B C D
+.outputs SUM
+.subckt fulladder a=A b=B cin=C s=sum0 cout=c0
+.subckt fulladder a=D b=cin1 cin=cin2 s=sum1 cout=c1
+.names sum0 sum1 SUM
+10 1
+01 1
+.names sum0 sum1 net0
+11 1
+.subckt fulladder a=c0 b=c1 cin=net0 s=cout1 cout=cout2
+.latch cout1 cin1 0
+.latch cout2 net1 0
+.latch net1 cin2 0
+
+
+.end
+
+.model fulladder
+.inputs a b cin
+.outputs s cout
+.names a b k
+10 1
+01 1
+.names k cin s
+10 1
+01 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
