@@ -1,0 +1,62 @@
+.model serial_adder
+.inputs w x y z
+.clock c
+.outputs o
+.subckt fulladder a=w b=x c=y d=z cin1=x1 cin2=x2 s=o cout1=x3 cout2=x4
+.latch d=x3 q=x1 0
+.latch d=x4 q=x2 0
+.end
+
+.model fulladder
+.inputs a b c d cin1 cin2
+.outputs s cout1 cout2
+.names a b k
+10 1
+01 1
+.names c d k1
+10 1
+01 1
+.names k k1 k2
+10 1
+01 1
+.names k2 cin1 s
+10 1
+01 1
+
+.names a b c d cin1 cin2 cout1
+110000 1
+101000 1
+100100 1
+100010 1
+011000 1
+010100 1
+010010 1
+001100 1
+001010 1
+000110 1
+1111_1 1
+111_11 1
+11_111 1
+1_1111 1
+_11111 1
+
+.names a b c d cin1 cin2 cout2
+1111__ 1
+111_1_ 1
+11_11_ 1
+1_111_ 1
+_1111_ 1
+11___1 1
+1_1__1 1
+1__1_1 1
+1___11 1
+_11__1 1
+_1_1_1 1
+_1__11 1
+__11_1 1
+__1_11 1
+___111 1
+
+
+.end
+
