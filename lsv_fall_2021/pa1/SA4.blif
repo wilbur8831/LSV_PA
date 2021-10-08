@@ -1,0 +1,58 @@
+.model   SA4           # 4 number serial adder
+.inputs  A B C D clk
+.outputs S
+.latch A a re clk 0
+.latch B b re clk 0
+.latch C c re clk 0
+.latch D d re clk 0
+.names a b c d ci S
+10000 1 # 1one
+01000 1
+00100 1
+00010 1
+00001 1
+00111 1 # 3ones
+01011 1
+01101 1
+01110 1
+10011 1
+10101 1
+10110 1
+11001 1
+11010 1
+11100 1
+11111 1 # 5ones
+.names a b c d ci s1_r
+10001 1
+01001 1
+00110 1
+00101 1
+00-11 1
+0101- 1
+0110- 1
+011-0 1
+1001- 1
+1010- 1
+101-0 1
+1100- 1
+110-0 1
+11-00 1
+.names a b c d ci s2_r
+-1111 1 # 4ones or 5ones
+1-111 1
+11-11 1
+111-1 1
+1111- 1
+.latch s2_r s2 re clk 0
+.names s1_r s2 co co_r
+-11 1
+1-1 1
+11- 1
+.names s1_r s2 co s1
+100 1
+010 1
+001 1
+111 1
+.latch co_r co re clk 0
+.latch s1   ci re clk 0
+.end
