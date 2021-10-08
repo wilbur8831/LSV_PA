@@ -1,0 +1,32 @@
+.model SerialAdder
+.inputs a b c d
+.outputs s
+.subckt 4numfa A0=a A1=b A2=c A3=d cin0=cin0 cin1=cin1    sum=s carry0 carry1
+.latch carry0 cin0 0
+.latch carry1 cin1 0
+
+.end
+
+.model 4numfa
+.inputs A0 A1 A2 A3 cin0 cin1
+.outputs sum carry0 carry1
+.subckt fulladder a=A0     b=A1     cin=cin0    s=sum0   cout=CARRY0
+.subckt fulladder a=A2     b=A3     cin=cin1    s=sum1   cout=CARRY1
+.subckt fulladder a=sum0   b=sum1   cin=0       s=sum    cout=CARRY2
+.subckt fulladder a=CARRY0 b=CARRY1 cin=CARRY2  s=carry0 cout=carry1
+.end
+
+.model fulladder
+.inputs a b cin
+.outputs s cout
+.names a b k
+10 1
+01 1
+.names k cin s
+10 1
+01 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
