@@ -1,0 +1,32 @@
+.model 4adder
+.inputs A B C D
+.outputs S
+.latch l1_in l2_in l1_out l2_out 0
+
+.subckt adder a=A b=B cin=C sum=S1 cout=C1
+.subckt adder a=C1 b=d cin=l1_in sum=S2 cout=l1_out
+.subckt adder a=S1 b=S2 cin=l2_in sum=S cout=l2_out
+
+.end
+
+.model adder
+.inputs a b cin
+.outputs sum cout
+
+.names a b k
+10 1
+01 1
+
+.names k cin sum
+10 1
+01 1
+
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+
+.end
+
+
+
