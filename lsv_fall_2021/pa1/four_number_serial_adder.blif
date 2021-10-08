@@ -1,0 +1,25 @@
+.model 4NumberSerialAdder
+.inputs a b c d
+.outputs s
+.subckt fulladder a=a b=b cin=cin1 s=s1 cout=cout1
+.subckt fulladder a=c b=d cin=cin2 s=s2 cout=cout2
+.subckt fulladder b=s1 a=s2 cin=cin3 s=s cout=cout3
+.latch cout1 cin1 0
+.latch cout2 cin2 0
+.latch cout3 cin3 0
+.end
+
+.model fulladder
+.inputs a b cin
+.outputs s cout
+.names a b k
+10 1
+01 1
+.names k cin s
+10 1
+01 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
