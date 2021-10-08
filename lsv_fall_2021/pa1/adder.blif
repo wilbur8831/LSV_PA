@@ -1,0 +1,46 @@
+.model 4numserialadder
+.inputs A B C D
+.outputs S
+.subckt fulladder a=A b=B cin=C00 s=F cout=E
+.subckt fulladder a=C b=D cin=C10 s=H cout=G
+.subckt 2bitadder a1=E a0=F b1=G b0=H s=S c0=C01 c1=C11
+.latch C01 C00 0
+.latch C11 C12 0
+.latch C12 C10 0
+.end
+
+.model fulladder
+.inputs a b cin
+.outputs s cout
+.names a b k
+10 1
+01 1
+.names k cin s
+10 1
+01 1
+.names a b cin cout
+11- 1
+1-1 1
+-11 1
+.end
+
+.model 2bitadder
+.inputs a1 a0 b1 b0
+.outputs s c0 c1
+.names a1 a0 b1 b0 c1
+1-1- 1
+1101 1
+0111 1
+.names a1 a0 b1 b0 c0
+0010 1
+0011 1
+0101 1
+0110 1
+1000 1
+1001 1
+1100 1
+1111 1
+.names a1 a0 b1 b0 s
+-0-1 1
+-1-0 1
+.end
