@@ -1,0 +1,33 @@
+.model 4_bit_serial_adder
+.inputs a b c d 
+.outputs s
+.clock clk
+
+.subckt serialadder _a=a _b=b _s=s1
+.subckt serialadder _a=c _b=d _s=s2
+.subckt serialadder _a=s1 _b=s2 _s=s
+.end
+
+.model serialadder
+.inputs _a _b
+.outputs _s
+.subckt fulladder f_a=_a f_b=_b f_cin=_cin f_s=_s f_cout=_cout
+.latch _cout _cin ah clk 0
+.end
+
+.model fulladder
+.inputs f_a f_b f_cin
+.outputs f_s f_cout
+.names f_a f_b k
+10 1
+01 1
+.names k f_cin f_s
+10 1
+01 1
+.names f_a f_b f_cin f_cout
+11- 1
+1-1 1
+-11 1
+.end
+
+
