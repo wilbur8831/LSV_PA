@@ -14,6 +14,7 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaCSatOld.c \
     src/aig/gia/giaCSat.c \
     src/aig/gia/giaCSat2.c \
+    src/aig/gia/giaCSat3.c \
     src/aig/gia/giaCTas.c \
     src/aig/gia/giaCut.c \
     src/aig/gia/giaDecs.c \
@@ -59,6 +60,7 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaOf.c \
     src/aig/gia/giaPack.c \
     src/aig/gia/giaPat.c \
+    src/aig/gia/giaPat2.c \
     src/aig/gia/giaPf.c \
     src/aig/gia/giaQbf.c \
     src/aig/gia/giaReshape1.c \
