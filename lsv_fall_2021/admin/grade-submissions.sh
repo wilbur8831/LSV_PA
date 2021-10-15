@@ -21,8 +21,10 @@ grade_one_branch () {
     student="$1"
     result="${pa_dir}/${student}.csv"
     git switch "${student}"
-    rm src/ext-lsv/*.o src/ext-lsv/*.d \
-        src/base/abci/*.o src/base/abci/*.d
+    for extdir in src/ext*; do
+        rm ${extdir}/*.o ${extdir}/*.d
+    done
+    rm src/base/abci/*.o src/base/abci/*.d
     make -j8
     echo "Benchmark,Result" > "${result}"
     rm -rf "${out_dir}" "${diff_dir}"
