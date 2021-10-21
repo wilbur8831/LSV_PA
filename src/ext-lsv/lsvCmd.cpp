@@ -9,6 +9,8 @@
 #include <iostream>
 #include <algorithm>
 #include <map>
+#include <typeinfo>
+
 using namespace std;
 static int Lsv_CommandPrintNodes(Abc_Frame_t* pAbc, int argc, char** argv);
 static int Lsv_CommandMFFC(Abc_Frame_t* pAbc, int argc, char** argv);
@@ -113,11 +115,11 @@ void Graph::CCDFS(int vertex = 0,int num11 = 0, std::map <int,string> nodemap = 
 
     int num_cc = 0;
     for (int i = 0; i < num_vertex; i++) {
-        if (predecessor[i] < 0) {
-            std::cout << "MSFC " << num_cc++ << ": " << nodemap[i+num11+1] ;
+        if (predecessor[i] < 0 && i >= num11) {
+            std::cout << "MSFC " << num_cc++ << ": " << nodemap[i] ;
             for (int j = 0; j < num_vertex; j++) {
                 if (predecessor[j] == i) {
-                    std::cout << ","<< nodemap[j+num11+1] ;
+                    std::cout << ","<<        nodemap[j] ;
                 }
             }
             std::cout << std::endl;
@@ -168,7 +170,10 @@ usage:
   Abc_Print(-2, "\t-h    : print the command usage\n");
   return 1;
 }
-
+bool cmp1(std::pair<int,int>a,std::pair<int,int>b)
+{
+    return a.first < b.first;
+}
 int Lsv_CommandMFFC(Abc_Frame_t* pAbc, int argc, char** argv) {
   Abc_Ntk_t* pNtk = Abc_FrameReadNtk(pAbc);
   int c;
@@ -185,47 +190,45 @@ int Lsv_CommandMFFC(Abc_Frame_t* pAbc, int argc, char** argv) {
   int i;
   //static int 14 = Abc_NtkNodeNum(pNtk);
   std::vector <int> if_two_fanout;
-  std::vector <std::set<int> > big_set;
-  std::vector<std::set<int> >::iterator it_i;
-  std::set<int>::iterator itr;
+  std::vector <std::pair<int,int> > big_set;
   std::vector <int> boom;
   std::map<int, std::string> nodemap;
-  int num11 = Abc_NtkObjNum(pNtk) - Abc_NtkNodeNum(pNtk) - 1;
-  
+  int num11 = Abc_NtkObjNum(pNtk) - Abc_NtkNodeNum(pNtk) ;
+  //std::cout<<num11;
   //Abc_NtkIncrementTravId(pNtk);
-  int node_num = Abc_NtkNodeNum(pNtk);
+  int node_num = Abc_NtkObjNum(pNtk);
   Abc_NtkForEachNode(pNtk, pObj, i) {
     //printf("Object Id = %d, name = %s\n", Abc_ObjId(pObj), Abc_ObjName(pObj));
     nodemap.insert(std::pair<int, std::string>(Abc_ObjId(pObj), Abc_ObjName(pObj)));
-    std::set <int> aig_set;
-    aig_set.insert(Abc_ObjId(pObj));
+    std::pair<int,int> aig_set;
+    aig_set.first=(Abc_ObjId(pObj));
     Abc_Obj_t* pFanin;
     int j;
     Abc_ObjForEachFanin(pObj, pFanin, j) {
       //printf("  Fanin-%d: Id = %d, name = %s\n", j, Abc_ObjId(pFanin),
       //       Abc_ObjName(pFanin));
       if (!Abc_ObjIsPi(pFanin)){
-        // if (std::find(if_two_fanout.begin(), if_two_fanout.end(),Abc_ObjId(pFanin))!=if_two_fanout.end())// duplicate fanin
-        // {
-        //   std::set <int> sep_set;
-        //   sep_set.insert(Abc_ObjId(pFanin));
-        //   std::vector<std::set<int> >::iterator it_i_1;
-        //   for(it_i_1=big_set.begin(); it_i_1!=big_set.end(); ++it_i_1)
-        //   {
-        //     if ((*it_i_1).count(Abc_ObjId(pFanin))){
-        //       (*it_i_1).erase(Abc_ObjId(pFanin));
-        //     }
-        //   }
-        //   big_set.push_back(sep_set);
-        // }
-        // else//normal
+
         {
-          if (std::find(if_two_fanout.begin(), if_two_fanout.end(),Abc_ObjId(pFanin))!=if_two_fanout.end())
-          boom.push_back(Abc_ObjId(pFanin));
-          else
-          if_two_fanout.push_back(Abc_ObjId(pFanin));
           
-          aig_set.insert(Abc_ObjId(pFanin));
+          if (std::find(if_two_fanout.begin(), if_two_fanout.end(),Abc_ObjId(pFanin))!=if_two_fanout.end())
+          {
+            //std::cout<<Abc_ObjId(pFanin)<<std::endl;
+            //boom.push_back(Abc_ObjId(pFanin));
+            for (int i  = 0; i< big_set.size();i++){
+              if(big_set[i].second == Abc_ObjId(pFanin)) big_set.erase(big_set.begin()+i);
+            }
+          }
+          
+          else
+          {
+            aig_set.second = (Abc_ObjId(pFanin));
+            big_set.push_back(aig_set);
+            if_two_fanout.push_back(Abc_ObjId(pFanin));
+          }
+          
+          
+          
         }
       }
     }
@@ -244,57 +247,60 @@ int Lsv_CommandMFFC(Abc_Frame_t* pAbc, int argc, char** argv) {
     //  }
     //  
     //}
-    big_set.push_back(aig_set);
+    
     
   }
   //graph start
-  std::cout<<num11<<"AAAAAAAAAAAAA";
-  Graph g3(node_num);
-  for (int y = 0; y< boom.size();y++){
-    std::cout<<boom[y]<<" ";
-  }
-
-  for (int y = 0; y< boom.size();y++){
-    for(it_i=big_set.begin(); it_i!=big_set.end(); ++it_i){
-    if ((*it_i).count(boom[y]) )
-      (*it_i).erase(boom[y]);
   
-  }
-  }
+  Graph g3(node_num);
+
+
+  
+//   for(int lp = 0; lp<big_set.size(); lp++){
+//     set<int>::iterator it1;
+//     for (it1 = big_set[lp].begin(); it1 != big_set[lp].end(); it1 ++)
+// {
+//     cout << *it1 <<" ";
+// }
+// std::cout<<std::endl;
+//   }
     
-    for(it_i=big_set.begin(); it_i!=big_set.end(); ++it_i){
-    for( itr = (*it_i).begin();itr!=(*it_i).end();itr++){
-      std::cout<<*itr<<" ";
-    }
-    std::cout<<std::endl;
-  }
-  int op = 0;
-  boom.clear();
+  
+  //boom.clear();
   if_two_fanout.clear();
-  for(op ; op<big_set.size(); op++){
-    std::cout<<"DDDDDDDDDDDDDDDDDDDDDDDDDD"<<std::endl;
-    if (big_set[op].size() == 2) {
+  std::vector<std::pair<int, int> > vec;
+  for( int op = 0; op<big_set.size(); op++){
+    //if (big_set[op].size() >1) {
       //std::cout<<*(big_set[op].begin())<<" "<<*(++(big_set[op].begin()))<<std::endl;
-      g3.AddEdgeList(*(big_set[op].begin())-num11, *(++(big_set[op].begin()))-num11);
-    }
-    if (big_set[op].size() == 3){
-      g3.AddEdgeList(*(big_set[op].begin())-num11, *(++(big_set[op].begin()))-num11);
-      g3.AddEdgeList(*(++(big_set[op].begin()))-num11, *(--(big_set[op].end()))-num11);
-      //std::cout<<*(big_set[op].begin())<<" "<<*(++(big_set[op].begin()))<<std::endl;
-      //std::cout<<*(++(big_set[op].begin()))<<" "<<*(--(big_set[op].end()))<<std::endl;
-    } 
+      vec.push_back(std::make_pair(big_set[op].first,big_set[op].second));
+      vec.push_back(std::make_pair(big_set[op].second,big_set[op].first));
+      
+    //}
+    //if (big_set[op].size() == 3){
+    //  g3.AddEdgeList(*(big_set[op].begin())-num11, *(++(big_set[op].begin()))-num11);
+    //  g3.AddEdgeList(*(++(big_set[op].begin()))-num11, *(--(big_set[op].end()))-num11);
+    //  //std::cout<<*(big_set[op].begin())<<" "<<*(++(big_set[op].begin()))<<std::endl;
+    //  //std::cout<<*(++(big_set[op].begin()))<<" "<<*(--(big_set[op].end()))<<std::endl;
+    //} 
     //std::cout<<"Next set"<<std::endl;
         
        // if(itr!=(*it_i).end() && p < (*it_i).size()){    
        //   //g3.AddEdgeList(*itr++, *itr); 
        //   itr--;
        // }
-  } 
+  }
+  
+  sort(vec.begin(), vec.end(), cmp1);
+  for (int re = 0; re<vec.size();re++){
+    g3.AddEdgeList(vec[re].first,vec[re].second);
+    //std::cout<<vec[re].first<< " "<<vec[re].second<<std::endl;
+  }
   big_set.clear();
   //big_set.shrink_to_fit();   
   
-  
-  g3.CCDFS(node_num,num11,nodemap);
+  //std::cout<<node_num;
+  g3.CCDFS(0,num11,nodemap);
+  //std::cout<<node_num<<"  "<<num11<<" ";
   return 0;
 
 
